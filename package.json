@@ -26,6 +26,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/postcss": "^4.1.8",
     "electron-updater": "^6.3.9",
+    "lodash": "^4.17.21",
     "postcss": "^8.5.4",
     "react-use": "^17.6.0",
     "tailwindcss": "^4.1.8",

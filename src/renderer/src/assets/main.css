@@ -1,12 +1,10 @@
-@import './base.css';
 @import "tailwindcss";
-
-body {
-}
-
+@import './base.css';
 
 #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  --tab-height: 36px;
+  --tab-gap: 4px;
 }

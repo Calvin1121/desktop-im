@@ -1,12 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { CustomerApi } from './index.enum'
 
 // Custom APIs for renderer
 const api = {
-  [CustomerApi.AddTab]: (url: string) => ipcRenderer.send(CustomerApi.AddTab, url),
-  [CustomerApi.CreatedTab]: (callbak: (...args) => void) => ipcRenderer.on(CustomerApi.CreatedTab, callbak),
-  [CustomerApi.CloseTab]: (uuid: string) => ipcRenderer.send(CustomerApi.CloseTab, uuid),
+  openUrl: (...args) => ipcRenderer.send('openUrl', ...args),
+  openTab: () => ipcRenderer.send('openTab'),
+  switchTab: (...args) => ipcRenderer.send('switchTab', ...args),
+  closeTab: (...args) => ipcRenderer.send('closeTab', ...args),
+  resize: (...args) => ipcRenderer.send('resize', ...args),
+  exitApp: () => ipcRenderer.send('exitApp')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

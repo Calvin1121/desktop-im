@@ -1,13 +1,18 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import { CustomerApi } from './index.enum'
+import { Tab as TabType, Bounds as BoundsType } from '../type'
 
 declare global {
   interface Window {
     electron: ElectronAPI
     api: {
-      [CustomerApi.AddTab]: (url: string) => void
-      [CustomerApi.CreatedTab]: (callbak: (...args) => void) => void
-      [CustomerApi.CloseTab]: (uuid: string) => void
+      openUrl: (tab: Tab, bounds: Bounds) => void
+      openTab: (bounds: Bounds) => void
+      switchTab: (tab: Tab, bounds: Bounds) => void
+      closeTab: (tab: Tab, newTab: Tab, bounds: Bounds) => void
+      resize: (tab: Tab, bounds: Bounds) => void
+      exitApp: () => void
     }
   }
+  interface Tab extends TabType {}
+  interface Bounds extends BoundsType {}
 }

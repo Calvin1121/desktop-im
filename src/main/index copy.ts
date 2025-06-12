@@ -1,17 +1,12 @@
-import { app, shell, BrowserWindow, ipcMain, IpcMainEvent, BrowserView } from 'electron'
-import { join } from 'path'
+import { app, shell, BrowserWindow, ipcMain, BrowserView } from 'electron'
+import path, { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { Bounds, Tab } from '../type'
+import { CustomerApi } from '../preload/index.enum'
+import { v4 } from 'uuid'
 
-interface View {
-  view: BrowserView
-  tab: Tab
-}
-
-let mainWindow: BrowserWindow
-let globalBounds: Bounds
-const viewMap: Map<string, View> = new Map()
+let mainWindow
+const views: Map<string, BrowserView> = new Map()
 
 function createWindow(): void {
   // Create the browser window.
@@ -29,6 +24,10 @@ function createWindow(): void {
     }
   })
 
+  //   if (!app.isPackaged) {
+  mainWindow.webContents.openDevTools()
+  //   }
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
@@ -38,55 +37,39 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  mainWindow.on('close', () => { })
+
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
+  // if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    // mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  // } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-  }
+  // }
 }
 
-function createBrowserView(uuid: string): BrowserView {
+function createBrowserView(url: string, uuid: string): void {
+  if (!url) return
   const view = new BrowserView({
     webPreferences: {
-      partition: `persist:${uuid}`,
-      preload: join(__dirname, '../preload/index.js'),
+      partition: `persist:${uuid}`, // 独立会话
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true
     }
   })
-  return view
-}
-
-function hideBrowserViews(): void {
-  const browserViews = mainWindow.getBrowserViews()
-  for (const view of browserViews) {
-    mainWindow.removeBrowserView(view)
-  }
-}
-
-function onHideTabs(_, bounds): void {
-  globalBounds = bounds
-  hideBrowserViews()
-}
-
-function onSwitchTab(_, tab, bounds): void {
-  onHideTabs(_, bounds)
-  const view = viewMap.get(tab.uuid)?.view
-  if (view) {
-    view.setBounds(globalBounds)
-    mainWindow.addBrowserView(view)
-  }
-}
-
-function getViewByUuid(uuid: string): BrowserView | undefined {
-  return viewMap.get(uuid)?.view
-}
-
-function onDestroyTab(tab): void {
-  console.info(tab)
+  mainWindow.addBrowserView(view)
+  view.setBounds({ x: 0, y: 40, width: 900, height: 630 })
+  // // 页面加载完成后设置监控
+  view.webContents.on('did-finish-load', () => {
+    if (!view.webContents.isDestroyed()) {
+      // setupWebSocketMonitoring(view.webContents)
+    }
+  })
+  // view.webContents.openDevTools()
+  // view.webContents.loadURL('http://baidu.com')
+  views.set(uuid, view)
 }
 
 // This method will be called when Electron has finished
@@ -103,35 +86,39 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // new api
-  ipcMain.on('openUrl', (_, tab, bounds) => {
-    globalBounds = bounds
-    const { uuid } = tab
-    const view = createBrowserView(uuid)
-    viewMap.set(uuid, { view, tab })
-    view.setBounds(globalBounds)
-    mainWindow.addBrowserView(view)
-    view.webContents.loadURL(tab.url)
-  })
-  ipcMain.on('openTab', onHideTabs)
-  ipcMain.on('switchTab', onSwitchTab)
-  ipcMain.on('closeTab', (_, tab, newTab, bounds) => {
-    if (newTab)
-      onSwitchTab(_, newTab, bounds)
-    else
-      onHideTabs(_, bounds)
-    onDestroyTab(tab)
-  })
-  ipcMain.on('resize', (_, tab, bounds) => {
-    globalBounds = bounds
-    getViewByUuid(tab.uuid)?.setBounds(globalBounds)
-  })
-  ipcMain.on('exitApp', () => {
-    app.quit()
-  })
-  // new api
-
   createWindow()
+
+  // IPC test
+  // ipcMain.on('ping', () => console.log('pong'))
+
+  ipcMain.on(CustomerApi.AddTab, (event: Electron.IpcMainEvent, url) => {
+    const uuid = v4()
+    createBrowserView(url, uuid)
+    event.sender.send(CustomerApi.CreatedTab, uuid, url)
+  })
+
+  ipcMain.on(CustomerApi.CloseTab, (event: Electron.IpcMainEvent, uuid: string) => {
+    const view = views.get(uuid)
+    if (view) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const webContents = view.webContents as any
+        if (webContents.debugger.isAttached()) {
+          webContents.debugger.detach()
+        }
+        mainWindow.removeBrowserView(view)
+        webContents.destroy()
+        webContents.close()
+      } catch (error) {
+        console.error('关闭标签页失败:', error)
+      }
+      views.delete(uuid)
+    }
+  })
+
+  ipcMain.on(CustomerApi.SetUrl, (event: Electron.IpcMainEvent, uuid: string, url: string) => {
+    console.info(uuid, url)
+  })
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
