@@ -23,7 +23,7 @@ export default function App() {
     const uuid = v4()
     const tab = { uuid, url: '' }
     setTabs((prev) => [...prev, tab])
-    setTab(tab)
+    setTab(() => tab)
     window.api.openTab(getBounds())
     isInit.current = true
   }, [isExceed])
@@ -32,17 +32,18 @@ export default function App() {
     if (item.uuid === tab?.uuid) {
       const index = tabs.findIndex((_tab) => _tab.uuid === item.uuid)
       newTab = tabs[index - 1]
-      setTab(newTab)
+      setTab(() => newTab)
     }
     const _tabs = tabs.filter((tab) => tab.uuid !== item.uuid)
-    setTabs(_tabs)
+    setTabs(() => _tabs)
+    // console.info( _tabs, newTab)
     if (_tabs.length) window.api.closeTab(item, newTab, getBounds())
     else window.api.exitApp()
     e.stopPropagation()
   }
   const onSwitch = (item: Tab) => {
     if (item.uuid !== tab?.uuid) {
-      setTab(item)
+      setTab(() => item)
       window.api.switchTab(item, getBounds())
     }
   }
@@ -61,7 +62,7 @@ export default function App() {
   const onOpenUrl = (item: (typeof BASE_IM_LIST)[0]) => {
     const bounds = getBounds()
     const _tab = { ...tab, ...item } as Tab
-    setTab(_tab)
+    setTab(() => _tab)
     setTabs((prev) => prev.map((tab) => (tab.uuid === _tab.uuid ? _tab : tab)))
     // console.info(_tab, bounds)
     window.api.openUrl(_tab, bounds)
@@ -76,7 +77,7 @@ export default function App() {
               className={`h-[calc(var(--tab-height)-var(--tab-gap))] min-w-15 text-black flex items-center justify-center text-sm px-2 rounded-t-sm cursor-pointer ${item.uuid === tab?.uuid ? 'bg-[#ff473f]' : 'bg-[white]'}`}
               key={item.uuid}
             >
-              <span>{item.name ?? '标签'}</span>
+              <span>{item.name ?? '标签页'}</span>
               <IconClose onClick={(e) => onClose(item, e)} className="ml-[2px]" size={14} />
             </div>
           ))}

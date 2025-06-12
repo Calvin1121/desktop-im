@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, IpcMainEvent, BrowserView } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, BrowserView } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -116,10 +116,10 @@ app.whenReady().then(() => {
   ipcMain.on('openTab', onHideTabs)
   ipcMain.on('switchTab', onSwitchTab)
   ipcMain.on('closeTab', (_, tab, newTab, bounds) => {
-    if (newTab)
-      onSwitchTab(_, newTab, bounds)
-    else
+    if (newTab) {
       onHideTabs(_, bounds)
+      onSwitchTab(_, newTab, bounds)
+    }
     onDestroyTab(tab)
   })
   ipcMain.on('resize', (_, tab, bounds) => {
