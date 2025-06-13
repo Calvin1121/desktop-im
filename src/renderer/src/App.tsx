@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { IconAddCircle, IconClose } from './components/iconfont'
 import { v4 } from 'uuid'
 import { BASE_IM_LIST } from './app.model'
-import _ from 'lodash'
 
 export default function App() {
   const MAX_TAB = 5
@@ -24,7 +23,7 @@ export default function App() {
     const tab = { uuid, url: '' }
     setTabs((prev) => [...prev, tab])
     setTab(() => tab)
-    window.api.openTab(getBounds())
+    window.api.openTab()
     isInit.current = true
   }, [isExceed])
   const onClose = (item: Tab, e: React.MouseEvent<SVGElement, MouseEvent>) => {
@@ -50,15 +49,6 @@ export default function App() {
   useEffect(() => {
     onAddTab()
   }, [onAddTab])
-  useEffect(() => {
-    const onResize = _.debounce(() => {
-      tab && window.api.resize(tab, getBounds())
-    }, 200)
-    window.addEventListener('resize', onResize)
-    return () => {
-      window.removeEventListener('resize', onResize)
-    }
-  }, [tab])
   const onOpenUrl = (item: (typeof BASE_IM_LIST)[0]) => {
     const bounds = getBounds()
     const _tab = { ...tab, ...item } as Tab

@@ -10,7 +10,6 @@ interface View {
 }
 
 let mainWindow: BrowserWindow
-let globalBounds: Bounds
 const viewMap: Map<string, View> = new Map()
 
 function createWindow(): void {
@@ -67,16 +66,16 @@ function hideBrowserViews(): void {
   }
 }
 
-function onHideTabs(_, bounds): void {
-  globalBounds = bounds
+function onHideTabs(): void {
   hideBrowserViews()
 }
 
 function onSwitchTab(_, tab, bounds): void {
-  onHideTabs(_, bounds)
+  onHideTabs()
   const view = viewMap.get(tab.uuid)?.view
   if (view) {
-    view.setBounds(globalBounds)
+    view.setBounds(bounds)
+    view.setAutoResize({width: true, height: true})
     mainWindow.addBrowserView(view)
   }
 }
@@ -86,7 +85,20 @@ function getViewByUuid(uuid: string): BrowserView | undefined {
 }
 
 function onDestroyTab(tab): void {
-  console.info(tab)
+  const view = getViewByUuid(tab)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const webContents = view?.webContents as any
+  if (!webContents || !view) return
+  try {
+    viewMap.delete(tab?.uuid)
+    if (webContents.debugger.isAttached()) {
+      webContents.debugger.detach()
+    }
+    mainWindow.removeBrowserView(view)
+    webContents.destroy()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 // This method will be called when Electron has finished
@@ -104,28 +116,27 @@ app.whenReady().then(() => {
   })
 
   // new api
-  ipcMain.on('openUrl', (_, tab, bounds) => {
-    globalBounds = bounds
+  ipcMain.on('openUrl', (_, tab, bounds, success, fail) => {
     const { uuid } = tab
     const view = createBrowserView(uuid)
     viewMap.set(uuid, { view, tab })
-    view.setBounds(globalBounds)
+    view.setBounds(bounds)
+    view.setAutoResize({width: true, height: true})
     mainWindow.addBrowserView(view)
     view.webContents.loadURL(tab.url)
+    view.webContents.once('did-fail-load', () => {})
+    view.webContents.once('dom-ready', () => {})
   })
   ipcMain.on('openTab', onHideTabs)
   ipcMain.on('switchTab', onSwitchTab)
   ipcMain.on('closeTab', (_, tab, newTab, bounds) => {
     if (newTab) {
-      onHideTabs(_, bounds)
+      onHideTabs()
       onSwitchTab(_, newTab, bounds)
     }
     onDestroyTab(tab)
   })
-  ipcMain.on('resize', (_, tab, bounds) => {
-    globalBounds = bounds
-    getViewByUuid(tab.uuid)?.setBounds(globalBounds)
-  })
+  ipcMain.on('resize', () => {})
   ipcMain.on('exitApp', () => {
     app.quit()
   })

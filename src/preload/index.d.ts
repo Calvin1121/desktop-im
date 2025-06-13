@@ -6,10 +6,10 @@ declare global {
     electron: ElectronAPI
     api: {
       openUrl: (tab: Tab, bounds: Bounds) => void
-      openTab: (bounds: Bounds) => void
+      openTab: () => void
       switchTab: (tab: Tab, bounds: Bounds) => void
       closeTab: (tab: Tab, newTab: Tab, bounds: Bounds) => void
-      resize: (tab: Tab, bounds: Bounds) => void
+      resize: () => void
       exitApp: () => void
     }
   }
