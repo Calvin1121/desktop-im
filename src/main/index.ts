@@ -2,11 +2,16 @@ import { app, shell, BrowserWindow, ipcMain, BrowserView } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { Bounds, Tab } from '../type'
 
+export interface Tab {
+  name?: string
+  uuid: string
+  url: string
+}
 interface View {
   view: BrowserView
   tab: Tab
+  wssHandler?: (...args) => void
 }
 
 let mainWindow: BrowserWindow
@@ -16,7 +21,9 @@ function createWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 900,
+    minWidth: 900,
     height: 670,
+    minHeight: 670,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -24,7 +31,7 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -75,7 +82,7 @@ function onSwitchTab(_, tab, bounds): void {
   const view = viewMap.get(tab.uuid)?.view
   if (view) {
     view.setBounds(bounds)
-    view.setAutoResize({width: true, height: true})
+    view.setAutoResize({ width: true, height: true })
     mainWindow.addBrowserView(view)
   }
 }
@@ -85,13 +92,17 @@ function getViewByUuid(uuid: string): BrowserView | undefined {
 }
 
 function onDestroyTab(tab): void {
-  const view = getViewByUuid(tab)
+  // const view = getViewByUuid(tab)
+  const { uuid } = tab
+  const { view, wssHandler } = viewMap.get(uuid) ?? {}
+  if (!view) return
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const webContents = view?.webContents as any
-  if (!webContents || !view) return
   try {
-    viewMap.delete(tab?.uuid)
+    viewMap.delete(uuid)
     if (webContents.debugger.isAttached()) {
+      webContents.debugger.sendCommand('Network.disable')
+      wssHandler && webContents.debugger.off('message', wssHandler)
       webContents.debugger.detach()
     }
     mainWindow.removeBrowserView(view)
@@ -101,6 +112,49 @@ function onDestroyTab(tab): void {
   }
 }
 
+function handleWebSocketData(params, tab: Tab): void {
+  try {
+    const payloadData = params.response?.payloadData
+    if (!payloadData) return
+
+    const isBase64 = /^[A-Za-z0-9+/]+={0,2}$/.test(payloadData)
+    let decodedData;
+
+    if (isBase64) {
+      try {
+        decodedData = Buffer.from(payloadData, 'base64').toString('utf-8')
+      } catch (error) {
+        console.error(error)
+        // decodedData = `[Base64解码失败] ${payloadData}`
+      }
+      console.info(decodedData, tab)
+    }
+  } catch (error) {
+    console.info(error)
+  }
+}
+
+function attachDebuggerToView(tab: Tab): void {
+  const uuid = tab.uuid
+  const view = getViewByUuid(uuid)
+  if (!view) return
+  const webContents = view?.webContents
+  try {
+    const wssHandler = (_, method, params): void => {
+      if (method === 'Network.webSocketFrameReceived') {
+        handleWebSocketData(params, tab)
+      }
+    }
+    if (!webContents?.debugger.isAttached()) {
+      webContents?.debugger.attach('1.3')
+    }
+    webContents?.debugger.sendCommand('Network.enable')
+    webContents?.debugger.on('message', wssHandler)
+    viewMap.set(tab.uuid, { view, wssHandler, tab })
+  } catch (error) {
+    console.error(error)
+  }
+}
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -118,14 +172,23 @@ app.whenReady().then(() => {
   // new api
   ipcMain.on('openUrl', (_, tab, bounds, success, fail) => {
     const { uuid } = tab
+    if (viewMap.has(uuid)) {
+      onSwitchTab(_, tab, bounds)
+      return
+    }
     const view = createBrowserView(uuid)
     viewMap.set(uuid, { view, tab })
     view.setBounds(bounds)
-    view.setAutoResize({width: true, height: true})
+    view.setAutoResize({ width: true, height: true })
     mainWindow.addBrowserView(view)
     view.webContents.loadURL(tab.url)
-    view.webContents.once('did-fail-load', () => {})
-    view.webContents.once('dom-ready', () => {})
+    view.webContents.once('did-finish-load', () => {
+      if (!view.webContents.isDestroyed()) {
+        attachDebuggerToView(tab)
+      }
+    })
+    view.webContents.once('did-fail-load', () => { })
+    view.webContents.once('dom-ready', () => { })
   })
   ipcMain.on('openTab', onHideTabs)
   ipcMain.on('switchTab', onSwitchTab)
@@ -136,7 +199,7 @@ app.whenReady().then(() => {
     }
     onDestroyTab(tab)
   })
-  ipcMain.on('resize', () => {})
+  ipcMain.on('resize', () => { })
   ipcMain.on('exitApp', () => {
     app.quit()
   })
