@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { IconAddCircle, IconClose } from './components/iconfont'
 import { v4 } from 'uuid'
 import { BASE_IM_LIST } from './app.model'
+import _ from 'lodash'
 
 export default function App() {
   const MAX_TAB = 5
@@ -57,6 +58,15 @@ export default function App() {
     // console.info(_tab, bounds)
     window.api.openUrl(_tab, bounds)
   }
+  useEffect(() => {
+    const onResize = _.debounce(() => {
+      tab && window.api.resize(tab, getBounds())
+    }, 100)
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+    }
+  }, [tab])
   return (
     <div className="w-full h-full flex flex-col">
       <div ref={barRef} className="h-[var(--tab-height)] flex bg-gray-200 pt-[4px]">

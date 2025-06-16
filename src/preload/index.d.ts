@@ -9,7 +9,7 @@ declare global {
       openTab: () => void
       switchTab: (tab: Tab, bounds: Bounds) => void
       closeTab: (tab: Tab, newTab: Tab, bounds: Bounds) => void
-      resize: () => void
+      resize: (tab: Tab, bounds: Bounds) => void
       exitApp: () => void
     }
   }
