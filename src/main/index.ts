@@ -3,13 +3,13 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import _ from 'lodash'
-import { API_MAP } from '../renderer/src/app.model'
+import { API_MAP, IM_TYPE } from '../renderer/src/app.model'
 
 export interface Tab {
   name: string
   uuid: string
   url: string
-  key: string
+  key: IM_TYPE
 }
 interface View {
   view: BrowserView
@@ -19,10 +19,11 @@ interface View {
 
 interface CommonApi {
   requestId: string
-  // payload?: string
   url: string
-  // headers: Record<string, string>
-  // body: Record<string, string>
+  headers: Record<string, string>
+  method: string
+  postData?: string
+  onCookie: Promise<string>
 }
 
 let mainWindow: BrowserWindow
@@ -89,13 +90,15 @@ function hideBrowserViews(): void {
 function onHideTabs(): void {
   hideBrowserViews()
 }
-
-function onSwitchTab(_, tab, bounds): void {
+function applyViewLayout(view: BrowserView, bounds: Electron.Rectangle): void {
+  view.setBounds(bounds)
+  view.setAutoResize({ width: true, height: true })
+}
+function onSwitchTab(_: Electron.IpcMainEvent, tab: Tab, bounds: Electron.Rectangle): void {
   onHideTabs()
   const view = viewMap.get(tab.uuid)?.view
   if (view) {
-    view.setBounds(bounds)
-    view.setAutoResize({ width: true, height: true })
+    applyViewLayout(view, bounds)
     mainWindow.addBrowserView(view)
   }
 }
@@ -104,7 +107,7 @@ function getViewByUuid(uuid: string): BrowserView | undefined {
   return viewMap.get(uuid)?.view
 }
 
-function onDestroyTab(tab): void {
+function onDestroyTab(tab: Tab): void {
   // const view = getViewByUuid(tab)
   const { uuid } = tab
   const { view, onMsgHandler } = viewMap.get(uuid) ?? {}
@@ -113,6 +116,11 @@ function onDestroyTab(tab): void {
   const webContents = view?.webContents as any
   try {
     viewMap.delete(uuid)
+    for (const key of apisMap.keys()) {
+      if (key.startsWith(uuid)) {
+        apisMap.delete(key)
+      }
+    }
     if (webContents.debugger.isAttached()) {
       webContents.debugger.sendCommand('Network.disable')
       onMsgHandler && webContents.debugger.off('message', onMsgHandler)
@@ -125,7 +133,8 @@ function onDestroyTab(tab): void {
   }
 }
 
-function handleWebSocketData(params, tab: Tab): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function handleWebSocketData(params: any, tab: Tab): void {
   try {
     const payloadData = params.response?.payloadData
     if (!payloadData) return
@@ -146,56 +155,59 @@ function handleWebSocketData(params, tab: Tab): void {
     console.info(error)
   }
 }
+function onLineWorksCookie(data): string {
+  const cookies = _.get(data, 'cookies') || []
+  return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join(';')
+}
+function getCookiesByUrl(webContents: WebContents, url: string, tab: Tab): Promise<string> {
+  return webContents.debugger
+    .sendCommand('Network.getCookies', { urls: [url] })
+    .then((data) => {
+      if (tab.key === IM_TYPE.LineWorks) return onLineWorksCookie(data)
+      return ''
+    })
+    .catch(() => '')
+}
 function handleRequestWillBeSent(webContents, params, tab: Tab): void {
   const { requestId, request } = params
-  // console.info(request.headers.Cookie, 'Cookie')
-  const { url, postData, hasPostData } = request
+  const { url, postData, hasPostData, headers, method } = request
   const apis = _.get(API_MAP, tab.key) || {}
   for (const key in apis) {
     const apiUniqId = `${tab.uuid}-${tab.key}-${key}`
-    const prevApiData = apisMap.get(apiUniqId)
     const item = apis[key]
     if (url.includes(item.urlKey)) {
-      // session.defaultSession.cookies.get({ url }).then((res) => {
-      //   console.info(res)
-      // })
-      // webContents.debugger
-      //   .sendCommand('Network.getCookies', {
-      //     urls: [url]
-      //   })
-      //   .then((res) => {
-      //     console.info(res)
-      //   })
-      // console.info(url, requestId)
-      // const payload = hasPostData ? JSON.parse(postData) : null
-      // const isSkipByPayloadFilter = payload ? _.isMatch(payload, item.payloadFilter) : false
-      // if (!isSkipByPayloadFilter) {
-      const apiData = { requestId, url }
+      const onCookie = getCookiesByUrl(webContents, url, tab)
+      const apiData = { requestId, url, method, headers, onCookie }
+      if (hasPostData) {
+        Object.assign(apiData, { postData })
+      }
       apisMap.set(apiUniqId, apiData)
-      // }
     }
   }
 }
-function getResponseBody(
-  webContents: WebContents,
-  requestId: string,
-  callback?: (data) => void
-): void {
-  webContents.debugger
-    .sendCommand('Network.getResponseBody', { requestId })
-    .then((res) => {
-      console.info(res)
-    })
-    .catch(() => callback?.(null))
+
+async function onFetchApiData(apiData: CommonApi): Promise<void> {
+  const { url, method, headers, onCookie, postData: body } = apiData
+  const cookie = await onCookie
+  const options = { method, headers: { ...headers, cookie } }
+  if (body) {
+    Object.assign(options, { body })
+  }
+  console.info(options)
+  fetch(url, options).then(async (res) => {
+    if (res.ok) {
+      const data = await res.json()
+      console.info(data)
+    }
+  })
 }
-function handleLoadingFinished(webContents: WebContents, params, tab: Tab): void {
+function handleLoadingFinished(params, tab: Tab): void {
   const apis = _.get(API_MAP, tab.key) || {}
   for (const key in apis) {
     const apiUniqId = `${tab.uuid}-${tab.key}-${key}`
     const apiData = apisMap.get(apiUniqId)
-    if (apiData?.requestId === params.requestId) {
-      console.info(apiData)
-      getResponseBody(webContents, params.requestId)
+    if (apiData && apiData?.requestId === params.requestId) {
+      onFetchApiData(apiData)
     }
   }
 }
@@ -205,7 +217,9 @@ function attachDebuggerToView(tab: Tab): void {
   if (!view) return
   const webContents = view?.webContents
   try {
-    const onMsgHandler = (_, method, params): void => {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onMsgHandler = (_: Electron.Event, method: string, params: any): void => {
       if (method === 'Network.webSocketFrameReceived') {
         handleWebSocketData(params, tab)
       }
@@ -213,11 +227,8 @@ function attachDebuggerToView(tab: Tab): void {
         handleRequestWillBeSent(webContents, params, tab)
       }
       if (method === 'Network.loadingFinished') {
-        handleLoadingFinished(webContents, params, tab)
+        handleLoadingFinished(params, tab)
       }
-      // console.info(method)
-      // if (method === 'Net')
-      // if()
     }
     if (!webContents?.debugger.isAttached()) {
       webContents?.debugger.attach('1.3')
@@ -252,16 +263,15 @@ app.whenReady().then(() => {
     }
     const view = createBrowserView(uuid)
     viewMap.set(uuid, { view, tab })
-    view.setBounds(bounds)
-    view.setAutoResize({ width: true, height: true })
+    applyViewLayout(view, bounds)
     mainWindow.addBrowserView(view)
     view.webContents.loadURL(tab.url)
     view.webContents.once('did-finish-load', () => {
       if (!view.webContents.isDestroyed()) {
         attachDebuggerToView(tab)
-        view.webContents.openDevTools({
-          mode: 'detach' // 可选: 'right' | 'bottom' | 'undocked' | 'detach'
-        })
+        // view.webContents.openDevTools({
+        //   mode: 'detach' // 可选: 'right' | 'bottom' | 'undocked' | 'detach'
+        // })
       }
     })
     view.webContents.once('did-fail-load', () => { })
