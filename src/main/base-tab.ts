@@ -3,9 +3,9 @@ import { join } from 'path'
 import type { Tab } from '../model/type'
 
 export abstract class TabInstance {
-  public readonly uuid: string
-  public readonly view: BrowserView
-  public readonly tab: Tab
+  readonly uuid: string
+  readonly view: BrowserView
+  readonly tab: Tab
   private debuggerMessageHandler?: (event: Electron.Event, method: string, params: any) => void
   protected abstract onAuthInfoByUrl(url: string)
   protected abstract onDebuggerMessageHandler(): (
@@ -27,18 +27,18 @@ export abstract class TabInstance {
     })
   }
 
-  public async load(bounds: Electron.Rectangle) {
+  async load(bounds: Electron.Rectangle) {
     this.view.setBounds(bounds)
     this.view.setAutoResize({ width: true, height: true })
     await this.view.webContents.loadURL(this.tab.url)
     this.attachDebugger()
   }
 
-  public getView(): BrowserView {
+  getView(): BrowserView {
     return this.view
   }
 
-  public destroy() {
+  destroy() {
     const webContents = this.view.webContents as any
     if (webContents.debugger.isAttached()) {
       webContents.debugger.off('message', this.debuggerMessageHandler)
