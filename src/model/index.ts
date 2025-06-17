@@ -12,18 +12,11 @@ export const BASE_IM_LIST = [
     name: 'Line',
     key: IM_TYPE.LineWorks,
     icon: '📞',
-    url: 'https://auth.worksmobile.com/login/login'
+    url: 'https://auth.worksmobile.com/login/login?accessUrl=https%3A%2F%2Fcommon.worksmobile.com%2Fproxy%2Fmy&isRefreshed=true'
   }
 ]
-export const LINE_WORKS_API = {
-  // channelInfo: { urlKey: 'client/chat/getChannelInfo' }
-  meApi: { urlKey: 'domain/contacts/my' },
-  usersApi: {
-    dataKey: 'result',
-    urlKey: 'chat/getVisibleUserChannelList'
-  }
-}
 
-export const API_MAP = {
-  [IM_TYPE.LineWorks]: LINE_WORKS_API
+export enum DebuggerMethod {
+  RequestWillBeSent = 'Network.requestWillBeSent',
+  WebSocketFrameReceived = 'Network.webSocketFrameReceived'
 }

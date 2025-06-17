@@ -10,8 +10,8 @@ let tabManager: TabMgr
 function createWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 900,
-    minWidth: 900,
+    width: 1024,
+    minWidth: 1024,
     height: 670,
     minHeight: 670,
     show: false,
@@ -60,7 +60,7 @@ app.whenReady().then(() => {
 
   tabManager = new TabMgr(mainWindow)
   // new api
-  ipcMain.on('openUrl', (_, tab, bounds) => tabManager.openTab(tab, bounds))
+  ipcMain.on('openUrl', (_, tab, bounds) => tabManager.openUrl(tab, bounds))
   ipcMain.on('switchTab', (_, tab, bounds) => tabManager.switchTab(tab, bounds))
   ipcMain.on('openTab', () => tabManager.hideTabs())
   ipcMain.on('closeTab', (_, tab, newTab, bounds) => {

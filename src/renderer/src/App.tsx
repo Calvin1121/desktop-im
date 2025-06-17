@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { IconAddCircle, IconClose } from './components/iconfont'
 import { v4 } from 'uuid'
-import { BASE_IM_LIST } from './app.model'
 import _ from 'lodash'
+import { BASE_IM_LIST } from '../../model'
 
 export default function App() {
   const MAX_TAB = 5
@@ -60,6 +60,7 @@ export default function App() {
   }
   useEffect(() => {
     const onResize = _.debounce(() => {
+      console.info(tab)
       tab && window.api.resize(tab, getBounds())
     }, 100)
     window.addEventListener('resize', onResize)

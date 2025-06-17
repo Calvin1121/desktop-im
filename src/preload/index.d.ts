@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import { Tab as TabType, Bounds as BoundsType } from '../type'
+import { Tab as TabType, Bounds as BoundsType } from '../model/type'
 
 declare global {
   interface Window {

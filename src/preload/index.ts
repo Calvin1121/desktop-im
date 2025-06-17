@@ -7,7 +7,7 @@ const api = {
   openTab: () => ipcRenderer.send('openTab'),
   switchTab: (...args) => ipcRenderer.send('switchTab', ...args),
   closeTab: (...args) => ipcRenderer.send('closeTab', ...args),
-  resize: () => ipcRenderer.send('resize'),
+  resize: (...args) => ipcRenderer.send('resize', ...args),
   exitApp: () => ipcRenderer.send('exitApp')
 }
 
