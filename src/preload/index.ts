@@ -1,14 +1,20 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { Bounds, Tab, TabUser } from '../model/type'
 
 // Custom APIs for renderer
 const api = {
-  openUrl: (...args) => ipcRenderer.send('openUrl', ...args),
+  openUrl: (tab: Tab, bounds: Bounds) => ipcRenderer.send('openUrl', tab, bounds),
   openTab: () => ipcRenderer.send('openTab'),
-  switchTab: (...args) => ipcRenderer.send('switchTab', ...args),
-  closeTab: (...args) => ipcRenderer.send('closeTab', ...args),
-  resize: (...args) => ipcRenderer.send('resize', ...args),
-  exitApp: () => ipcRenderer.send('exitApp')
+  switchTab: (tabUuid: string, bounds: Bounds) => ipcRenderer.send('switchTab', tabUuid, bounds),
+  closeTab: (tabUuid: string, newTabUuid: string, bounds: Bounds) =>
+    ipcRenderer.send('closeTab', tabUuid, newTabUuid, bounds),
+  resize: (tabUuid: string, bounds: Bounds) => ipcRenderer.send('resize', tabUuid, bounds),
+  exitApp: () => ipcRenderer.send('exitApp'),
+  onTabLoaded: (callback: (tabUuid: string) => void) =>
+    ipcRenderer.on('onTabLoaded', (_, tabUuid: string) => callback(tabUuid)),
+  onTabUser: (callback: (user: TabUser, tabUuid: string) => void) =>
+    ipcRenderer.on('onTabUser', (_, user, tabUuid) => callback(user, tabUuid))
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

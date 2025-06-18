@@ -28,6 +28,7 @@
     "electron-updater": "^6.3.9",
     "lodash": "^4.17.21",
     "postcss": "^8.5.4",
+    "react-spinners": "^0.17.0",
     "react-use": "^17.6.0",
     "tailwindcss": "^4.1.8",
     "uuid": "^11.1.0"

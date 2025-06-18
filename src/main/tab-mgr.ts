@@ -3,6 +3,7 @@ import { Bounds, Tab } from '../model/type'
 import { TabInstance } from './base-tab'
 import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
+import { tabEventBus, TabEvents } from './event-bus'
 
 export class TabMgr {
   private mainWindow: BrowserWindow
@@ -10,6 +11,7 @@ export class TabMgr {
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow
+    this.onUpdateTabUser()
   }
 
   hideTabs(): void {
@@ -17,9 +19,9 @@ export class TabMgr {
       this.mainWindow.removeBrowserView(view)
     }
   }
-  switchTab(tab: Tab, bounds: Electron.Rectangle): void {
+  switchTab(tabUuid: string, bounds: Electron.Rectangle): void {
     this.hideTabs()
-    const view = this.tabs.get(tab.uuid)?.getView()
+    const view = this.tabs.get(tabUuid)?.getView()
     if (view) {
       view.setBounds(bounds)
       this.mainWindow.addBrowserView(view)
@@ -28,7 +30,7 @@ export class TabMgr {
   openUrl(tab: Tab, bounds: Bounds): void {
     const uuid = tab.uuid
     if (this.tabs.has(uuid)) {
-      this.switchTab(tab, bounds)
+      this.switchTab(uuid, bounds)
       return
     }
     let instance;
@@ -37,17 +39,24 @@ export class TabMgr {
     }
     this.tabs.set(uuid, instance)
     this.mainWindow.addBrowserView(instance.getView())
-    instance.load(bounds)
+    instance.load(bounds).then(() => {
+      this.mainWindow.webContents.send('onTabLoaded', uuid)
+    })
   }
-  closeTab(tab: Tab): void {
-    const instance = this.tabs.get(tab.uuid)
+  closeTab(tabUuid: string): void {
+    const instance = this.tabs.get(tabUuid)
     if (!instance) return
     this.mainWindow.removeBrowserView(instance.getView())
     instance.destroy()
-    this.tabs.delete(tab.uuid)
+    this.tabs.delete(tabUuid)
   }
-  resizeTab(tab: Tab, bounds: Electron.Rectangle): void {
-    const instance = this.tabs.get(tab.uuid)
+  resizeTab(tabUuid: string, bounds: Electron.Rectangle): void {
+    const instance = this.tabs.get(tabUuid)
     instance?.getView().setBounds(bounds)
+  }
+  onUpdateTabUser() {
+    tabEventBus.once(TabEvents.TabUser, (tabUser, tabUuid) => {
+      this.mainWindow.webContents.send('onTabUser', tabUser, tabUuid)
+    })
   }
 }

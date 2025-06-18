@@ -9,7 +9,7 @@ export const BASE_IM_LIST = [
   { name: '钉钉', key: IM_TYPE.DTalk, icon: '📎', url: 'https://im.dingtalk.com/' },
   { name: '飞书', key: IM_TYPE.Zerak, icon: '🕊️', url: 'https://www.feishu.cn/' },
   {
-    name: 'Line',
+    name: 'Line Works',
     key: IM_TYPE.LineWorks,
     icon: '📞',
     url: 'https://auth.worksmobile.com/login/login?accessUrl=https%3A%2F%2Fcommon.worksmobile.com%2Fproxy%2Fmy&isRefreshed=true'

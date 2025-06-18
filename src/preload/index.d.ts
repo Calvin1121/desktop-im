@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import { Tab as TabType, Bounds as BoundsType } from '../model/type'
+import { Tab as TabType, Bounds as BoundsType, TabUser as TabUserType } from '../model/type'
 
 declare global {
   interface Window {
@@ -7,12 +7,15 @@ declare global {
     api: {
       openUrl: (tab: Tab, bounds: Bounds) => void
       openTab: () => void
-      switchTab: (tab: Tab, bounds: Bounds) => void
-      closeTab: (tab: Tab, newTab: Tab, bounds: Bounds) => void
-      resize: (tab: Tab, bounds: Bounds) => void
+      switchTab: (tabUuid: string, bounds: Bounds) => void
+      closeTab: (tabUuid: string, newTabUuid: string, bounds: Bounds) => void
+      resize: (tabUuid: string, bounds: Bounds) => void
       exitApp: () => void
+      onTabLoaded: (callback?: (tabUuid: string) => void) => void
+      onTabUser: (callback?: (user: TabUser, tabUuid: string) => void) => void
     }
   }
   interface Tab extends TabType {}
   interface Bounds extends BoundsType {}
+  interface TabUser extends TabUserType {}
 }

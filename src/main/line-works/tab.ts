@@ -1,5 +1,5 @@
 import { UserInfo, UserListItem } from '.'
-import { DebuggerMethod } from '../../model'
+import { DebuggerMethod, IM_TYPE } from '../../model'
 import { Tab } from '../../model/type'
 import { fetchWithRetry } from '../fetcher'
 import { TabInstance } from '../base-tab'
@@ -41,7 +41,7 @@ export class LineWorksTab extends TabInstance {
       user: this.userInfo,
       userList: this.userList
     }
-    console.info(payload)
+    // console.info(payload)
   }
   private requestWillBeSent(params: any) {
     const { request } = params
@@ -71,6 +71,11 @@ export class LineWorksTab extends TabInstance {
     const [err, data] = await fetchWithRetry(url, options)
     if (data && !err) {
       this.userInfo = data
+      const {
+        contactNo: userId,
+        name: { displayName: userName }
+      } = this.userInfo
+      this.updateTabUser({ userId, userName, from: IM_TYPE.LineWorks })
     }
   }
   private async getUserList(request: any) {

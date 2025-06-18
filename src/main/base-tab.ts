@@ -1,6 +1,7 @@
 import { BrowserView } from 'electron'
 import { join } from 'path'
 import type { Tab } from '../model/type'
+import { tabEventBus, TabEvents } from './event-bus'
 
 export abstract class TabInstance {
   readonly uuid: string
@@ -30,6 +31,7 @@ export abstract class TabInstance {
   async load(bounds: Electron.Rectangle) {
     this.view.setBounds(bounds)
     this.view.setAutoResize({ width: true, height: true })
+    this.view.webContents.openDevTools()
     await this.view.webContents.loadURL(this.tab.url)
     this.attachDebugger()
   }
@@ -55,5 +57,8 @@ export abstract class TabInstance {
     webContents.debugger.sendCommand('Network.enable')
     this.debuggerMessageHandler = this.onDebuggerMessageHandler()
     webContents.debugger.on('message', this.debuggerMessageHandler)
+  }
+  updateTabUser(tabUser) {
+    tabEventBus.emit(TabEvents.TabUser, tabUser, this.tab.uuid)
   }
 }

@@ -61,13 +61,13 @@ app.whenReady().then(() => {
   tabManager = new TabMgr(mainWindow)
   // new api
   ipcMain.on('openUrl', (_, tab, bounds) => tabManager.openUrl(tab, bounds))
-  ipcMain.on('switchTab', (_, tab, bounds) => tabManager.switchTab(tab, bounds))
+  ipcMain.on('switchTab', (_, tabUuid, bounds) => tabManager.switchTab(tabUuid, bounds))
   ipcMain.on('openTab', () => tabManager.hideTabs())
-  ipcMain.on('closeTab', (_, tab, newTab, bounds) => {
-    if (newTab) tabManager.switchTab(newTab, bounds)
-    tabManager.closeTab(tab)
+  ipcMain.on('closeTab', (_, tabUuid, newTabUuid, bounds) => {
+    if (newTabUuid) tabManager.switchTab(newTabUuid, bounds)
+    tabManager.closeTab(tabUuid)
   })
-  ipcMain.on('resize', (_, tab, bounds) => tabManager.resizeTab(tab, bounds))
+  ipcMain.on('resize', (_, tabUuid, bounds) => tabManager.resizeTab(tabUuid, bounds))
   ipcMain.on('exitApp', () => app.quit())
   // new api
   app.on('activate', function () {

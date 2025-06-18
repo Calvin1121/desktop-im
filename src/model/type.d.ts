@@ -5,11 +5,17 @@ export interface Tab {
   uuid: string
   url: string
   key?: IM_TYPE
-  onAuth?: (data: Record<string, any>) => any
+  loading?: boolean
 }
 export interface Bounds {
   width: number
   height: number
   x: number
   y: number
+}
+
+export interface TabUser {
+  userId: string
+  userName: string
+  from: IM_TYPE
 }
