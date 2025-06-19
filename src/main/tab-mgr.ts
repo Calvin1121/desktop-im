@@ -16,16 +16,16 @@ export class TabMgr {
   }
 
   hideTabs(): void {
-    for (const view of this.mainWindow.getBrowserViews()) {
-      this.mainWindow.removeBrowserView(view)
+    for (const [_, tab] of this.tabs) {
+      tab.isVisible = false
     }
   }
   switchTab(tabUuid: string, bounds: Electron.Rectangle): void {
     this.hideTabs()
-    const view = this.tabs.get(tabUuid)?.getView()
-    if (view) {
-      view.setBounds(bounds)
-      this.mainWindow.addBrowserView(view)
+    const tab = this.tabs.get(tabUuid)
+    if (tab) {
+      tab.updateBounds(bounds)
+      tab.isVisible = true
     }
   }
   onGenerateTab(tab: Tab) {
@@ -61,7 +61,7 @@ export class TabMgr {
   }
   resizeTab(tabUuid: string, bounds: Electron.Rectangle): void {
     const instance = this.tabs.get(tabUuid)
-    instance?.getView().setBounds(bounds)
+    instance?.updateBounds(bounds)
   }
   onUpdateTabUser() {
     tabEventBus.once(TabEvents.TabUser, (tabUser, tabUuid) => {

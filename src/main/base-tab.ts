@@ -1,12 +1,21 @@
 import { BrowserView } from 'electron'
 import { join } from 'path'
-import type { Tab } from '../model/type'
+import type { Bounds, Tab } from '../model/type'
 import { tabEventBus, TabEvents } from './event-bus'
 
 export abstract class TabInstance {
   readonly uuid: string
   readonly view: BrowserView
   readonly tab: Tab
+  private _isVisible: boolean = false
+  set isVisible(visible) {
+    this._isVisible = visible
+    this.onSwitchVisibleStatus(visible)
+  }
+  get isVisible() {
+    return this._isVisible
+  }
+  private bounds: Bounds = {} as Bounds
   private debuggerMessageHandler?: (event: Electron.Event, method: string, params: any) => void
   protected abstract onAuthInfoByUrl(url: string)
   protected abstract onDebuggerMessageHandler(): (
@@ -29,11 +38,9 @@ export abstract class TabInstance {
   }
 
   async load(bounds: Electron.Rectangle) {
-    this.view.setBounds(bounds)
-    this.view.setAutoResize({ width: true, height: true })
-    // this.view.webContents.openDevTools()
-    await this.view.webContents.loadURL(this.tab.url)
-    this.attachDebugger()
+    this.bounds = bounds
+    this.isVisible = true
+    await this.view.webContents.loadURL(this.tab.url).then(() => this.attachDebugger())
   }
 
   getView(): BrowserView {
@@ -47,6 +54,23 @@ export abstract class TabInstance {
       webContents.debugger.detach()
     }
     webContents.destroy()
+  }
+
+  private onSwitchVisibleStatus(val) {
+    const { x, y, width, height } = this.bounds
+    const bounds = val
+      ? { x, y, width, height }
+      : { x: -width - x, y: height + y, width: 0, height: 0 }
+    this.view.setBounds(bounds)
+    this.view.setAutoResize({ width: true, height: true })
+  }
+
+  updateBounds(bounds: Bounds) {
+    this.bounds = bounds
+    if (this.isVisible) {
+      this.view.setBounds(bounds)
+      this.view.setAutoResize({ width: true, height: true })
+    }
   }
 
   private attachDebugger() {
