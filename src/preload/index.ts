@@ -11,8 +11,8 @@ const api = {
     ipcRenderer.send('closeTab', tabUuid, newTabUuid, bounds),
   resize: (tabUuid: string, bounds: Bounds) => ipcRenderer.send('resize', tabUuid, bounds),
   exitApp: () => ipcRenderer.send('exitApp'),
-  onTabLoaded: (callback: (tabUuid: string) => void) =>
-    ipcRenderer.on('onTabLoaded', (_, tabUuid: string) => callback(tabUuid)),
+  onTabLoaded: (callback: (tabUuid: string, err?: Error) => void) =>
+    ipcRenderer.on('onTabLoaded', (_, tabUuid: string, err?: Error) => callback(tabUuid, err)),
   onTabUser: (callback: (user: TabUser, tabUuid: string) => void) =>
     ipcRenderer.on('onTabUser', (_, user, tabUuid) => callback(user, tabUuid))
 }

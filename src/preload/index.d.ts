@@ -11,7 +11,7 @@ declare global {
       closeTab: (tabUuid: string, newTabUuid: string, bounds: Bounds) => void
       resize: (tabUuid: string, bounds: Bounds) => void
       exitApp: () => void
-      onTabLoaded: (callback?: (tabUuid: string) => void) => void
+      onTabLoaded: (callback?: (tabUuid: string, err?: Error) => void) => void
       onTabUser: (callback?: (user: TabUser, tabUuid: string) => void) => void
     }
   }

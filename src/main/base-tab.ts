@@ -31,7 +31,7 @@ export abstract class TabInstance {
   async load(bounds: Electron.Rectangle) {
     this.view.setBounds(bounds)
     this.view.setAutoResize({ width: true, height: true })
-    this.view.webContents.openDevTools()
+    // this.view.webContents.openDevTools()
     await this.view.webContents.loadURL(this.tab.url)
     this.attachDebugger()
   }

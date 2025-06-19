@@ -4,6 +4,7 @@ import { TabInstance } from './base-tab'
 import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
 import { tabEventBus, TabEvents } from './event-bus'
+import { DefaultTab } from './default-tab/tab'
 
 export class TabMgr {
   private mainWindow: BrowserWindow
@@ -27,21 +28,29 @@ export class TabMgr {
       this.mainWindow.addBrowserView(view)
     }
   }
+  onGenerateTab(tab: Tab) {
+    if (tab.key === IM_TYPE.LineWorks) {
+      return new LineWorksTab(tab)
+    }
+    return new DefaultTab(tab)
+  }
   openUrl(tab: Tab, bounds: Bounds): void {
     const uuid = tab.uuid
     if (this.tabs.has(uuid)) {
       this.switchTab(uuid, bounds)
       return
     }
-    let instance;
-    if (tab.key === IM_TYPE.LineWorks) {
-      instance = new LineWorksTab(tab)
-    }
+    const instance = this.onGenerateTab(tab)
     this.tabs.set(uuid, instance)
     this.mainWindow.addBrowserView(instance.getView())
-    instance.load(bounds).then(() => {
-      this.mainWindow.webContents.send('onTabLoaded', uuid)
-    })
+    instance
+      .load(bounds)
+      .then(() => {
+        this.mainWindow.webContents.send('onTabLoaded', uuid)
+      })
+      .catch((e) => {
+        this.mainWindow.webContents.send('onTabLoaded', uuid, e)
+      })
   }
   closeTab(tabUuid: string): void {
     const instance = this.tabs.get(tabUuid)
