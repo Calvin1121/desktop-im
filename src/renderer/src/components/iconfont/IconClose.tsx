@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import React, { CSSProperties, SVGAttributes, FunctionComponent } from 'react';
+import { CSSProperties, SVGAttributes, FunctionComponent } from 'react';
 import { getIconColor } from './helper';
 
 interface Props extends Omit<SVGAttributes<SVGElement>, 'color'> {
@@ -24,10 +24,6 @@ const IconClose: FunctionComponent<Props> = ({ size, color, style: _style, ...re
       />
     </svg>
   );
-};
-
-IconClose.defaultProps = {
-  size: 18,
 };
 
 export default IconClose;
