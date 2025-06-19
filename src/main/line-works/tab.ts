@@ -4,6 +4,7 @@ import { Tab } from '../../model/type'
 import { fetchWithRetry } from '../fetcher'
 import { TabInstance } from '../base-tab'
 import _ from 'lodash'
+import { apis, baseUrl } from '../../api'
 
 export class LineWorksTab extends TabInstance {
   private readonly userInfoUrl = 'contacts/my'
@@ -34,14 +35,16 @@ export class LineWorksTab extends TabInstance {
       }
     }
   }
-  private onForwardWssData(params) {
+  private async onForwardWssData(params) {
+    const url = `${baseUrl}${apis.webhookLinework}`
     const wssPayload = params.response?.payloadData
     const payload = {
       wssFrame: wssPayload,
       user: this.userInfo,
       userList: this.userList
     }
-    // console.info(payload)
+    const options = { body: JSON.stringify(payload), method: 'POST' }
+    this.postWssPayload({ url, options })
   }
   private requestWillBeSent(params: any) {
     const { request } = params
@@ -70,7 +73,7 @@ export class LineWorksTab extends TabInstance {
     const { url, options } = await this.generateRequestArguments(request)
     const [err, data] = await fetchWithRetry(url, options)
     if (data && !err) {
-      this.userInfo = data
+      this.userInfo = _.merge(this.userInfo, data)
       const {
         contactNo: userId,
         name: { displayName: userName }
@@ -82,7 +85,9 @@ export class LineWorksTab extends TabInstance {
     const { url, options } = await this.generateRequestArguments(request)
     const [err, data] = await fetchWithRetry(url, options)
     if (data && !err) {
-      this.userList = _.get(data, 'result')?.filter((item) => !!item.userList?.length)
+      const _userList = [...this.userList]
+      const userList = _.get(data, 'result')?.filter((item) => !!item.userList?.length)
+      this.userList = _.uniqBy([..._userList, ...userList], 'userNo')
     }
   }
 }

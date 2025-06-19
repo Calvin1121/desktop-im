@@ -16,6 +16,7 @@ export class TabMgr {
   }
 
   hideTabs(): void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [_, tab] of this.tabs) {
       tab.isVisible = false
     }

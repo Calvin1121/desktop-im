@@ -2,11 +2,14 @@ import { BrowserView } from 'electron'
 import { join } from 'path'
 import type { Bounds, Tab } from '../model/type'
 import { tabEventBus, TabEvents } from './event-bus'
+import { Worker } from 'node:worker_threads'
+import { FetchOptions } from './fetcher'
 
 export abstract class TabInstance {
   readonly uuid: string
   readonly view: BrowserView
   readonly tab: Tab
+  private wssWorker: Worker | null = null
   private _isVisible: boolean = false
   set isVisible(visible) {
     this._isVisible = visible
@@ -48,6 +51,8 @@ export abstract class TabInstance {
   }
 
   destroy() {
+    this.wssWorker?.terminate()
+    this.wssWorker = null
     const webContents = this.view.webContents as any
     if (webContents.debugger.isAttached()) {
       webContents.debugger.off('message', this.debuggerMessageHandler)
@@ -84,5 +89,28 @@ export abstract class TabInstance {
   }
   updateTabUser(tabUser) {
     tabEventBus.emit(TabEvents.TabUser, tabUser, this.tab.uuid)
+  }
+  protected initWssWorker() {
+    if (!this.wssWorker) {
+      const workerPath = join(__dirname, './wss-worker.js')
+      this.wssWorker = new Worker(workerPath)
+
+      this.wssWorker.on('message', (msg) => {
+        console.log('[Worker] Result:', msg)
+      })
+
+      this.wssWorker.on('error', (err) => {
+        console.error('[Worker] Error:', err)
+      })
+
+      this.wssWorker.on('exit', (code) => {
+        console.warn('[Worker] exited:', code)
+        this.wssWorker = null
+      })
+    }
+  }
+  protected postWssPayload(requestArg: { url: string; options: FetchOptions }) {
+    this.initWssWorker()
+    this.wssWorker?.postMessage(requestArg)
   }
 }

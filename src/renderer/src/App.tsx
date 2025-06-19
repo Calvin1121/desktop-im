@@ -69,11 +69,7 @@ export default function App() {
       setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: false } : tab)))
     })
     window.api.onTabUser((user, uuid) => {
-      setTabs((prev) =>
-        prev.map((tab) =>
-          tab.uuid === uuid ? { ...tab, name: `${tab.name}-${user.userName}` } : tab
-        )
-      )
+      console.info(user, uuid)
     })
   }, [])
   useEffect(() => {
