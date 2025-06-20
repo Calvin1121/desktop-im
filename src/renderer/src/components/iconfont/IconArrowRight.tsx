@@ -13,7 +13,7 @@ const DEFAULT_STYLE: CSSProperties = {
   display: 'block',
 };
 
-const IconArrowRight: FunctionComponent<Props> = ({ size, color, style: _style, ...rest }) => {
+const IconArrowRight: FunctionComponent<Props> = ({ size = 18, color, style: _style, ...rest }) => {
   const style = _style ? { ...DEFAULT_STYLE, ..._style } : DEFAULT_STYLE;
 
   return (

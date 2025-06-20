@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import { SVGAttributes, FunctionComponent } from 'react';
+import React, { SVGAttributes, FunctionComponent } from 'react';
 import IconClose from './IconClose';
 import IconAddCircle from './IconAddCircle';
 import IconAdjustment from './IconAdjustment';

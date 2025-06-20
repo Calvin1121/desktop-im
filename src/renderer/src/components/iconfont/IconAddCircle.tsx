@@ -13,7 +13,7 @@ const DEFAULT_STYLE: CSSProperties = {
   display: 'block',
 };
 
-const IconAddCircle: FunctionComponent<Props> = ({ size, color, style: _style, ...rest }) => {
+const IconAddCircle: FunctionComponent<Props> = ({ size = 18, color, style: _style, ...rest }) => {
   const style = _style ? { ...DEFAULT_STYLE, ..._style } : DEFAULT_STYLE;
 
   return (

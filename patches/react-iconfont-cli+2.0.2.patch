@@ -1,0 +1,55 @@
+diff --git a/node_modules/react-iconfont-cli/templates/SingleIcon.js.template b/node_modules/react-iconfont-cli/templates/SingleIcon.js.template
+index 559fd21..b128e14 100644
+--- a/node_modules/react-iconfont-cli/templates/SingleIcon.js.template
++++ b/node_modules/react-iconfont-cli/templates/SingleIcon.js.template
+@@ -1,20 +1,15 @@
+ /* eslint-disable */
+-
+-import React from 'react';
+ import { getIconColor } from './helper';
+ 
+ const DEFAULT_STYLE = {
+   display: 'block',
+ };
+ 
+-const #componentName# = ({ size, color, style: _style, ...rest }) => {
++const #componentName# = ({ size = #size#, color, style: _style, ...rest }) => {
+   const style = _style ? { ...DEFAULT_STYLE, ..._style } : DEFAULT_STYLE;
+ 
+   return (#iconContent#  );
+ };
+ 
+-#componentName#.defaultProps = {
+-  size: #size#,
+-};
+ 
+ export default #componentName#;
+diff --git a/node_modules/react-iconfont-cli/templates/SingleIcon.tsx.template b/node_modules/react-iconfont-cli/templates/SingleIcon.tsx.template
+index e86fd17..98dd680 100644
+--- a/node_modules/react-iconfont-cli/templates/SingleIcon.tsx.template
++++ b/node_modules/react-iconfont-cli/templates/SingleIcon.tsx.template
+@@ -1,7 +1,7 @@
+ /* tslint:disable */
+ /* eslint-disable */
+ 
+-import React, { CSSProperties, SVGAttributes, FunctionComponent } from 'react';
++import { CSSProperties, SVGAttributes, FunctionComponent } from 'react';
+ import { getIconColor } from './helper';
+ 
+ interface Props extends Omit<SVGAttributes<SVGElement>, 'color'> {
+@@ -13,14 +13,10 @@ const DEFAULT_STYLE: CSSProperties = {
+   display: 'block',
+ };
+ 
+-const #componentName#: FunctionComponent<Props> = ({ size, color, style: _style, ...rest }) => {
++const #componentName#: FunctionComponent<Props> = ({ size = #size#, color, style: _style, ...rest }) => {
+   const style = _style ? { ...DEFAULT_STYLE, ..._style } : DEFAULT_STYLE;
+ 
+   return (#iconContent#  );
+ };
+ 
+-#componentName#.defaultProps = {
+-  size: #size#,
+-};
+-
+ export default #componentName#;
