@@ -69,7 +69,7 @@ export default function App() {
       setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: false } : tab)))
     })
     window.api.onTabUser((user, uuid) => {
-      console.info(user, uuid)
+      setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, user } : tab)))
     })
   }, [])
   useEffect(() => {
@@ -99,17 +99,22 @@ export default function App() {
     <div className="w-full h-full flex flex-col">
       <div ref={barRef} className="h-[var(--tab-height)] flex bg-gray-200 pt-[4px]">
         <div className="flex gap-[2px] items-center max-w-[calc(100%-calc(var(--tab-height)-var(--tab-gap)))] px-2">
-          {tabs.map((item) => (
-            <div
-              title={item.name || ''}
-              onClick={() => onSwitch(item)}
-              className={`h-[calc(var(--tab-height)-var(--tab-gap))] min-w-15 text-black flex items-center justify-center text-sm px-2 rounded-t-sm cursor-pointer ${item.uuid === activeTabId ? 'bg-[#ff473f]' : 'bg-[white]'}`}
-              key={item.uuid}
-            >
-              <span>{item.name ?? '标签页'}</span>
-              <IconClose onClick={(e) => onClose(item, e)} className="ml-[2px]" size={14} />
-            </div>
-          ))}
+          {tabs.map((item) => {
+            const userName = item.user?.userName
+            const IMName = item.name
+            const displayName = IMName && userName ? `${IMName}-${userName}` : IMName || '标签页'
+            return (
+              <div
+                title={displayName}
+                onClick={() => onSwitch(item)}
+                className={`h-[calc(var(--tab-height)-var(--tab-gap))] min-w-15 text-black flex items-center justify-center text-sm px-2 rounded-t-sm cursor-pointer ${item.uuid === activeTabId ? 'bg-[#ff473f]' : 'bg-[white]'}`}
+                key={item.uuid}
+              >
+                <span>{displayName}</span>
+                <IconClose onClick={(e) => onClose(item, e)} className="ml-[2px]" size={14} />
+              </div>
+            )
+          })}
         </div>
         <div className="relative h-[calc(var(--tab-height)-var(--tab-gap))] w-[calc(var(--tab-height)-var(--tab-gap))] items-center justify-center flex before:absolute before:w-[2px] before:h-[65%] before:left-0 before:top-1/2 before:-translate-y-1/2 before:bg-gray-100">
           <IconAddCircle

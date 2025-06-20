@@ -6,6 +6,7 @@ export interface Tab {
   url: string
   key?: IM_TYPE
   loading?: boolean
+  user?: TabUser
 }
 export interface Bounds {
   width: number
