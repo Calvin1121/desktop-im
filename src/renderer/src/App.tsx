@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { IconAddCircle, IconClose } from '../../components/iconfont'
+import { IconAddCircle, IconClose } from './components/iconfont'
 import { v4 } from 'uuid'
 import _ from 'lodash'
-import { BASE_IM_LIST } from '../../../../model'
+import { BASE_IM_LIST } from '../../model'
 import { PuffLoader } from 'react-spinners'
 
-export default function AppSelect() {
+export default function App() {
   const MAX_TAB = 5
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string>()
@@ -53,7 +53,7 @@ export default function AppSelect() {
     }
   }
   useEffect(() => {
-    if (!isInit.current) onAddTab()
+    onAddTab()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const onOpenUrl = useCallback((item: Tab) => {
