@@ -3,11 +3,12 @@ import { join } from 'path'
 import type { Bounds, Tab } from '../model/type'
 import { tabEventBus, TabEvents } from './event-bus'
 import { Worker } from 'node:worker_threads'
+import creatWorker from './workers/wss-worker?nodeWorker'
 import { FetchOptions } from './fetcher'
 
 export abstract class TabInstance {
   readonly uuid: string
-  readonly view: BrowserView
+  view: BrowserView
   readonly tab: Tab
   private wssWorker: Worker | null = null
   private _isVisible: boolean = false
@@ -53,12 +54,15 @@ export abstract class TabInstance {
   destroy() {
     this.wssWorker?.terminate()
     this.wssWorker = null
-    const webContents = this.view.webContents as any
+    const view = this.view as any
+    const webContents = view.webContents
     if (webContents.debugger.isAttached()) {
       webContents.debugger.off('message', this.debuggerMessageHandler)
       webContents.debugger.detach()
     }
     webContents.destroy()
+    view.destroy?.()
+    this.view = null as any
   }
 
   private onSwitchVisibleStatus(val) {
@@ -92,8 +96,7 @@ export abstract class TabInstance {
   }
   protected initWssWorker() {
     if (!this.wssWorker) {
-      const workerPath = join(__dirname, './wss-worker.js')
-      this.wssWorker = new Worker(workerPath)
+      this.wssWorker = creatWorker({ workerData: 'worker' })
 
       this.wssWorker.on('message', (msg) => {
         console.log('[Worker] Result:', msg)

@@ -53,9 +53,8 @@ export default function App() {
     }
   }
   useEffect(() => {
-    onAddTab()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (!isInit.current) onAddTab()
+  }, [onAddTab])
   const onOpenUrl = useCallback((item: Tab) => {
     const bounds = getBounds()
     setActiveTabId(item.uuid)
