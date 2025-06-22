@@ -29,8 +29,11 @@ export default function AppSelect() {
     isInit.current = true
   }
   const onCloseIPCEvent = (tabs: Tab[], tab: Tab, newTab?: Tab) => {
-    if (tabs.length) window.api.closeTab(tab.uuid, newTab?.uuid ?? '', getBounds())
-    else window.api.exitApp()
+    if (newTab) setActiveTabId(newTab?.uuid)
+    if (tabs.length) {
+      window.api.closeTab(tab.uuid, newTab?.uuid ?? '', getBounds())
+      setTabs(tabs)
+    } else window.api.exitApp()
   }
   const onClose = (item: Tab, e: React.MouseEvent<SVGElement, MouseEvent>) => {
     const index = tabs.findIndex((tab) => tab.uuid === item.uuid)
@@ -38,12 +41,10 @@ export default function AppSelect() {
     const isActive = item.uuid === activeTabId
     if (isActive) {
       const nextTab = tabs[index + 1] || tabs[index - 1]
-      setActiveTabId(nextTab?.uuid)
       onCloseIPCEvent(_tabs, item, nextTab)
     } else {
       onCloseIPCEvent(_tabs, item)
     }
-    setTabs(_tabs)
     e.stopPropagation()
   }
   const onSwitch = (item: Tab) => {
