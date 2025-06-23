@@ -1,16 +1,18 @@
-import { UserInfo, UserListItem } from '.'
+import { UserChannelListItem, UserInfo } from '.'
 import { DebuggerMethod, IM_TYPE } from '../../model'
 import { Tab } from '../../model/type'
 import { fetchWithRetry } from '../fetcher'
 import { TabInstance } from '../base-tab'
 import _ from 'lodash'
 import { apis, baseUrl } from '../../api'
+import { Notification } from 'electron'
 
 export class LineWorksTab extends TabInstance {
   private readonly userInfoUrl = 'contacts/my'
-  private readonly userListUrl = 'chat/getVisibleUserChannelList'
+  private readonly syncUserChannelListUrl = 'client/chat/syncUserChannelList'
   private userInfo: UserInfo = {} as UserInfo
-  private userList: UserListItem[] = []
+  private channelMap: Map<number, UserChannelListItem> = new Map()
+  forwardCount = 0
   constructor(tab: Tab) {
     super(tab)
   }
@@ -30,21 +32,26 @@ export class LineWorksTab extends TabInstance {
       if (method === DebuggerMethod.RequestWillBeSent) {
         this.requestWillBeSent(params)
       }
-      if (method === DebuggerMethod.WebSocketFrameReceived) {
-        this.onForwardWssData(params)
-      }
     }
   }
-  private async onForwardWssData(params) {
+  private async onForwardData(params) {
     const url = `${baseUrl}${apis.webhookLinework}`
-    const wssPayload = params.response?.payloadData
-    const payload = {
-      wssFrame: wssPayload,
-      user: this.userInfo,
-      userList: this.userList
-    }
+    // const wssPayload = params.response?.payloadData
+    const payload = { wssPayload: params }
     const options = { body: JSON.stringify(payload), method: 'POST' }
-    this.postWssPayload({ url, options })
+    // const base64WssPayload = parseBase64(wssPayload)
+    // const parsedWssPayload = parseJsonString(base64WssPayload)
+    // console.info(parsedWssPayload)
+    // if (parsedWssPayload) {
+    //   if (_.get(parsedWssPayload, 'notification-id')) {
+    //     const sender = _.get(parsedWssPayload, 'loc-args0')
+    //     const contentType = _.get(parsedWssPayload, 'loc-key')
+    //     const content =
+    //       contentType === 'REV_MSG' ? _.get(parsedWssPayload, 'loc-args1') : `[非文本消息]`
+    //     return { sender, content }
+    //   }
+    this.forwardPayload({ url, options })
+    // }
   }
   private requestWillBeSent(params: any) {
     const { request } = params
@@ -52,14 +59,8 @@ export class LineWorksTab extends TabInstance {
     if (url.includes(this.userInfoUrl)) {
       this.getUserInfo(request)
     }
-    if (url.includes(this.userListUrl)) {
-      let payload
-      try {
-        payload = JSON.parse(request.postData)
-      } catch (err) {
-        console.error(err)
-      }
-      if (!payload.isPin) this.getUserList(request)
+    if (url.includes(this.syncUserChannelListUrl)) {
+      this.syncUserChannelList(request)
     }
   }
   private async generateRequestArguments(request: any) {
@@ -81,13 +82,22 @@ export class LineWorksTab extends TabInstance {
       this.updateTabUser({ userId, userName, from: IM_TYPE.LineWorks })
     }
   }
-  private async getUserList(request: any) {
+  private async syncUserChannelList(request: any) {
     const { url, options } = await this.generateRequestArguments(request)
     const [err, data] = await fetchWithRetry(url, options)
-    if (data && !err) {
-      const _userList = [...this.userList]
-      const userList = _.get(data, 'result')?.filter((item) => !!item.userList?.length)
-      this.userList = _.uniqBy([..._userList, ...userList], 'userNo')
+    if (!err && data) {
+      const items = _.get(data, 'result') as UserChannelListItem[]
+      const compareFields = ['channelNo', 'messageTime', 'messageNo', 'lastMessageNo', 'userNo']
+      for (const item of items) {
+        const channelNo = item.channelNo
+        const lastItem = this.channelMap.get(channelNo)
+        if (!_.isEqual(_.pick(item, compareFields), _.pick(lastItem, compareFields))) {
+          this.channelMap.set(channelNo, item)
+          // const notify = {}
+          // this.onNotify(notify)
+          this.onForwardData(item)
+        }
+      }
     }
   }
 }

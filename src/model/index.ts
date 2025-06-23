@@ -18,5 +18,6 @@ export const BASE_IM_LIST = [
 
 export enum DebuggerMethod {
   RequestWillBeSent = 'Network.requestWillBeSent',
-  WebSocketFrameReceived = 'Network.webSocketFrameReceived'
+  WebSocketFrameReceived = 'Network.webSocketFrameReceived',
+  ResponseReceived = 'Network.responseReceived'
 }

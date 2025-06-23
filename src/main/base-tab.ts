@@ -1,4 +1,4 @@
-import { BrowserView } from 'electron'
+import { BrowserView, Notification } from 'electron'
 import { join } from 'path'
 import type { Bounds, Tab } from '../model/type'
 import { tabEventBus, TabEvents } from './event-bus'
@@ -98,22 +98,26 @@ export abstract class TabInstance {
     if (!this.wssWorker) {
       this.wssWorker = creatWorker({ workerData: 'worker' })
 
-      this.wssWorker.on('message', (msg) => {
-        console.log('[Worker] Result:', msg)
-      })
+      // this.wssWorker.on('message', (msg) => {
+      //   console.log('[Worker] Result:', msg)
+      // })
 
-      this.wssWorker.on('error', (err) => {
-        console.error('[Worker] Error:', err)
-      })
+      // this.wssWorker.on('error', (err) => {
+      //   console.error('[Worker] Error:', err)
+      // })
 
-      this.wssWorker.on('exit', (code) => {
-        console.warn('[Worker] exited:', code)
-        this.wssWorker = null
-      })
+      // this.wssWorker.on('exit', (code) => {
+      //   console.warn('[Worker] exited:', code)
+      //   this.wssWorker = null
+      // })
     }
   }
-  protected postWssPayload(requestArg: { url: string; options: FetchOptions }) {
+  protected forwardPayload(requestArg: { url: string; options: FetchOptions }) {
     this.initWssWorker()
     this.wssWorker?.postMessage(requestArg)
+  }
+  protected onNotify(options: Electron.NotificationConstructorOptions) {
+    const notify = new Notification(options)
+    notify.show()
   }
 }

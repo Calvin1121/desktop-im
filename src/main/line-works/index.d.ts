@@ -59,7 +59,7 @@ export interface WorksAt {
   idSearchBlock: boolean
 }
 
-export interface UserListItem {
+export interface UserChannelListItem {
   channelNo: number
   channelType: number
   userCount: number
@@ -87,8 +87,41 @@ export interface UserListItem {
   pin: boolean
   flag: number
   messageStatusType: string
-  userList: any[]
+  userList: UserListItem[]
   botList: any[]
   updatedMsgNoList: any[]
   recalledNotiIdList: any[]
 }
+
+export interface UserListItem {
+  userNo: number
+  name: string
+  i18nName: string
+  i18nNames: I18nNames
+  nickName: string
+  position: string
+  i18nPositions?: I18nPositions
+  groupName: string
+  i18nGroupNames: any
+  groupPosition: string
+  i18nGroupPositions: any
+  photoHash: string
+  join: boolean
+  joinTime: number
+  updateTime: number
+  domainId: number
+  propertyFlag: number
+  domainName: string
+  i18nDomainNames: I18nDomainNames
+  serviceType: string
+  relationStatus: string
+  tenantId: number
+  mappingContactNos: number[]
+  guest: boolean
+}
+
+export interface I18nNames {}
+
+export interface I18nPositions {}
+
+export interface I18nDomainNames {}
