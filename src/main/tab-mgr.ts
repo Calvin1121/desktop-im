@@ -13,6 +13,7 @@ export class TabMgr {
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow
     this.onUpdateTabUser()
+    this.onNotifyClicked()
   }
 
   hideTabs(): void {
@@ -48,6 +49,7 @@ export class TabMgr {
       .load(bounds)
       .then(() => {
         this.mainWindow.webContents.send('onTabLoaded', uuid)
+        // instance.getView()?.webContents.openDevTools()
       })
       .catch((e) => {
         this.mainWindow.webContents.send('onTabLoaded', uuid, e)
@@ -67,6 +69,11 @@ export class TabMgr {
   onUpdateTabUser() {
     tabEventBus.once(TabEvents.TabUser, (tabUser, tabUuid) => {
       this.mainWindow.webContents.send('onTabUser', tabUser, tabUuid)
+    })
+  }
+  onNotifyClicked() {
+    tabEventBus.on(TabEvents.NotifyClicked, (tabUuid) => {
+      this.mainWindow.webContents.send('onTabSwitched', tabUuid)
     })
   }
 }

@@ -5,14 +5,13 @@ import { fetchWithRetry } from '../fetcher'
 import { TabInstance } from '../base-tab'
 import _ from 'lodash'
 import { apis, baseUrl } from '../../api'
-import { Notification } from 'electron'
+import { tabEventBus, TabEvents } from '../event-bus'
 
 export class LineWorksTab extends TabInstance {
   private readonly userInfoUrl = 'contacts/my'
   private readonly syncUserChannelListUrl = 'client/chat/syncUserChannelList'
   private userInfo: UserInfo = {} as UserInfo
   private channelMap: Map<number, UserChannelListItem> = new Map()
-  forwardCount = 0
   constructor(tab: Tab) {
     super(tab)
   }
@@ -36,22 +35,9 @@ export class LineWorksTab extends TabInstance {
   }
   private async onForwardData(params) {
     const url = `${baseUrl}${apis.webhookLinework}`
-    // const wssPayload = params.response?.payloadData
     const payload = { wssPayload: params }
     const options = { body: JSON.stringify(payload), method: 'POST' }
-    // const base64WssPayload = parseBase64(wssPayload)
-    // const parsedWssPayload = parseJsonString(base64WssPayload)
-    // console.info(parsedWssPayload)
-    // if (parsedWssPayload) {
-    //   if (_.get(parsedWssPayload, 'notification-id')) {
-    //     const sender = _.get(parsedWssPayload, 'loc-args0')
-    //     const contentType = _.get(parsedWssPayload, 'loc-key')
-    //     const content =
-    //       contentType === 'REV_MSG' ? _.get(parsedWssPayload, 'loc-args1') : `[非文本消息]`
-    //     return { sender, content }
-    //   }
     this.forwardPayload({ url, options })
-    // }
   }
   private requestWillBeSent(params: any) {
     const { request } = params
@@ -93,8 +79,13 @@ export class LineWorksTab extends TabInstance {
         const lastItem = this.channelMap.get(channelNo)
         if (!_.isEqual(_.pick(item, compareFields), _.pick(lastItem, compareFields))) {
           this.channelMap.set(channelNo, item)
-          // const notify = {}
-          // this.onNotify(notify)
+          const notify: Electron.NotificationConstructorOptions = {
+            title: item.title,
+            body: item.content,
+            hasReply: false
+          }
+          const onClick = () => tabEventBus.emit(TabEvents.NotifyClicked, this.uuid, this.bounds)
+          this.onNotify(notify, onClick)
           this.onForwardData(item)
         }
       }

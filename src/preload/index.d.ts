@@ -13,6 +13,7 @@ declare global {
       exitApp: () => Promise<Electron.MessageBoxReturnValue | undefined>
       onTabLoaded: (callback?: (tabUuid: string, err?: Error) => void) => void
       onTabUser: (callback?: (user: TabUser, tabUuid: string) => void) => void
+      onTabSwitched: (callback?: (tabUuid: string) => void) => void
     }
   }
   interface Tab extends TabType {}

@@ -47,12 +47,15 @@ export default function AppSelect() {
     }
     e.stopPropagation()
   }
-  const onSwitch = (item: Tab) => {
-    if (item.uuid !== activeTabId) {
-      setActiveTabId(item.uuid)
-      window.api.switchTab(item.uuid, getBounds())
-    }
-  }
+  const onSwitch = useCallback(
+    (item: Tab) => {
+      if (item.uuid !== activeTabId) {
+        setActiveTabId(item.uuid)
+        window.api.switchTab(item.uuid, getBounds())
+      }
+    },
+    [activeTabId]
+  )
   useEffect(() => {
     if (!isInit.current) onAddTab()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,6 +76,11 @@ export default function AppSelect() {
       setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, user } : tab)))
     })
   }, [])
+  useEffect(() => {
+    window.api.onTabSwitched((uuid) => {
+      onSwitch({ uuid } as Tab)
+    })
+  }, [onSwitch])
   useEffect(() => {
     const onResize = _.debounce(() => {
       activeTabId && window.api.resize(activeTabId, getBounds())

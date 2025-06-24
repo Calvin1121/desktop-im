@@ -14,7 +14,9 @@ const api = {
   onTabLoaded: (callback: (tabUuid: string, err?: Error) => void) =>
     ipcRenderer.on('onTabLoaded', (_, tabUuid: string, err?: Error) => callback(tabUuid, err)),
   onTabUser: (callback: (user: TabUser, tabUuid: string) => void) =>
-    ipcRenderer.on('onTabUser', (_, user, tabUuid) => callback(user, tabUuid))
+    ipcRenderer.on('onTabUser', (_, user, tabUuid) => callback(user, tabUuid)),
+  onTabSwitched: (callback: (tabUuid: string) => void) =>
+    ipcRenderer.on('onTabSwitched', (_, tabUuid: string) => callback(tabUuid))
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

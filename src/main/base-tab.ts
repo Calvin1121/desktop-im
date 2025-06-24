@@ -5,6 +5,7 @@ import { tabEventBus, TabEvents } from './event-bus'
 import { Worker } from 'node:worker_threads'
 import creatWorker from './workers/wss-worker?nodeWorker'
 import { FetchOptions } from './fetcher'
+import { showNotificationWithPermissionCheck } from './process/notify'
 
 export abstract class TabInstance {
   readonly uuid: string
@@ -19,7 +20,7 @@ export abstract class TabInstance {
   get isVisible() {
     return this._isVisible
   }
-  private bounds: Bounds = {} as Bounds
+  bounds: Bounds = {} as Bounds
   private debuggerMessageHandler?: (event: Electron.Event, method: string, params: any) => void
   protected abstract onAuthInfoByUrl(url: string)
   protected abstract onDebuggerMessageHandler(): (
@@ -116,8 +117,7 @@ export abstract class TabInstance {
     this.initWssWorker()
     this.wssWorker?.postMessage(requestArg)
   }
-  protected onNotify(options: Electron.NotificationConstructorOptions) {
-    const notify = new Notification(options)
-    notify.show()
+  protected onNotify(options: Electron.NotificationConstructorOptions, callback?: () => void) {
+    showNotificationWithPermissionCheck(options, callback)
   }
 }

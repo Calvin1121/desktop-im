@@ -3,24 +3,22 @@ import os from 'node:os'
 import { exec } from 'node:child_process'
 
 export function showNotificationWithPermissionCheck(
-  options: Electron.NotificationConstructorOptions
+  options: Electron.NotificationConstructorOptions,
+  callback?: () => void
 ) {
-  const canSend = Notification.isSupported()
-
-  if (!canSend) {
-    console.log('通知不被支持')
+  if (!Notification.isSupported()) {
+    console.warn('通知不被支持')
     return
   }
-
   try {
     const notification = new Notification(options)
+    notification.on('click', () => callback?.())
     notification.show()
   } catch (err) {
-    console.error(err)
-    console.warn('发送通知失败，尝试打开系统设置')
-    openNotificationSettings()
+    console.error('通知显示失败:', err)
   }
 }
+
 function openNotificationSettings() {
   const platform = os.platform()
 
