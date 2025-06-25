@@ -1,8 +1,9 @@
-import { app, shell, BrowserWindow, Menu } from 'electron'
+import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initIpcMain } from './process/ipc-main'
+import { onCustomerMenu } from './process/menu'
 
 let mainWindow: BrowserWindow
 
@@ -54,6 +55,8 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+
+  onCustomerMenu()
 
   createWindow()
   initIpcMain(app, mainWindow)

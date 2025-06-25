@@ -106,7 +106,7 @@ export default function AppSelect() {
   )
   return (
     <div className="w-full h-full flex flex-col">
-      <div ref={barRef} className="h-[var(--tab-height)] flex bg-gray-200 pt-[4px]">
+      <div ref={barRef} className="h-[var(--tab-height)] flex bg-[#ededed] py-[var(--tab-gap)]">
         <div className="flex gap-[2px] items-center max-w-[calc(100%-calc(var(--tab-height)-var(--tab-gap)))] px-2">
           {tabs.map((item) => {
             const userName = item.user?.userName
@@ -116,7 +116,7 @@ export default function AppSelect() {
               <div
                 title={displayName}
                 onClick={() => onSwitch(item)}
-                className={`h-[calc(var(--tab-height)-var(--tab-gap))] min-w-15 text-black flex items-center justify-center text-sm px-2 rounded-t-sm cursor-pointer ${item.uuid === activeTabId ? 'bg-[#ff473f]' : 'bg-[white]'}`}
+                className={`h-[calc(var(--tab-height)-var(--tab-gap)*2)] min-w-15 text-black flex items-center justify-center text-sm px-2 rounded-sm border cursor-pointer ${item.uuid === activeTabId ? 'bg-[white] border-[#dbdde1]' : 'bg-[#ededed] border-[#dbdde1]'}`}
                 key={item.uuid}
               >
                 <span>{displayName}</span>
@@ -125,7 +125,7 @@ export default function AppSelect() {
             )
           })}
         </div>
-        <div className="relative h-[calc(var(--tab-height)-var(--tab-gap))] w-[calc(var(--tab-height)-var(--tab-gap))] items-center justify-center flex before:absolute before:w-[2px] before:h-[65%] before:left-0 before:top-1/2 before:-translate-y-1/2 before:bg-gray-100">
+        <div className="relative h-[calc(var(--tab-height)-var(--tab-gap)*2)] w-[calc(var(--tab-height)-var(--tab-gap))] items-center justify-center flex before:absolute before:w-[2px] before:h-[65%] before:left-0 before:top-1/2 before:-translate-y-1/2 before:bg-[#dbdde1]">
           <IconAddCircle
             className={isExceed ? 'opacity-50 cursor-deny' : 'cursor-pointer'}
             onClick={onAddTab}
