@@ -1,0 +1,21 @@
+@reference "tailwindcss";
+
+.container {
+    @apply w-full h-full flex flex-col;
+}
+.tabBar {
+    @apply h-[var(--tab-height)] flex bg-[#ededed] py-[var(--tab-gap)];
+}
+.tabBarContent {
+    @apply flex gap-[2px] items-center max-w-[calc(100%-calc(var(--tab-height)-var(--tab-gap)))] px-2;
+}
+.tabBarItem {
+    @apply h-[calc(var(--tab-height)-var(--tab-gap)*2)] min-w-15 text-black flex items-center justify-center text-sm px-2 rounded-sm border cursor-pointer;
+}
+.addTab {
+    @apply relative h-[calc(var(--tab-height)-var(--tab-gap)*2)] w-[calc(var(--tab-height)-var(--tab-gap))] items-center justify-center flex;
+    @apply before:absolute before:w-[2px] before:h-[65%] before:left-0 before:top-1/2 before:-translate-y-1/2 before:bg-[#dbdde1];
+}
+.viewContainer {
+    @apply flex-1 overflow-hidden flex items-center justify-center gap-4;
+}

@@ -4,6 +4,8 @@ import { v4 } from 'uuid'
 import _ from 'lodash'
 import { BASE_IM_LIST } from '../../../../model'
 import { PuffLoader } from 'react-spinners'
+import styles from './index.module.scss'
+import cn from '@renderer/utils/classname'
 
 export default function AppSelect() {
   const MAX_TAB = 5
@@ -105,9 +107,9 @@ export default function AppSelect() {
     [onOpenUrl]
   )
   return (
-    <div className="w-full h-full flex flex-col">
-      <div ref={barRef} className="h-[var(--tab-height)] flex bg-[#ededed] py-[var(--tab-gap)]">
-        <div className="flex gap-[2px] items-center max-w-[calc(100%-calc(var(--tab-height)-var(--tab-gap)))] px-2">
+    <div className={styles.container}>
+      <div ref={barRef} className={styles.tabBar}>
+        <div className={styles.tabBarContent}>
           {tabs.map((item) => {
             const userName = item.user?.userName
             const IMName = item.name
@@ -116,16 +118,21 @@ export default function AppSelect() {
               <div
                 title={displayName}
                 onClick={() => onSwitch(item)}
-                className={`h-[calc(var(--tab-height)-var(--tab-gap)*2)] min-w-15 text-black flex items-center justify-center text-sm px-2 rounded-sm border cursor-pointer ${item.uuid === activeTabId ? 'bg-[white] border-[#dbdde1]' : 'bg-[#ededed] border-[#dbdde1]'}`}
+                className={cn(
+                  styles.tabBarItem,
+                  item.uuid === activeTabId
+                    ? 'bg-[white] border-[#dbdde1]'
+                    : 'bg-[#ededed] border-[#dbdde1]'
+                )}
                 key={item.uuid}
               >
-                <span>{displayName}</span>
+                <span className="select-none">{displayName}</span>
                 <IconClose onClick={(e) => onClose(item, e)} className="ml-[2px]" size={14} />
               </div>
             )
           })}
         </div>
-        <div className="relative h-[calc(var(--tab-height)-var(--tab-gap)*2)] w-[calc(var(--tab-height)-var(--tab-gap))] items-center justify-center flex before:absolute before:w-[2px] before:h-[65%] before:left-0 before:top-1/2 before:-translate-y-1/2 before:bg-[#dbdde1]">
+        <div className={styles.addTab}>
           <IconAddCircle
             className={isExceed ? 'opacity-50 cursor-deny' : 'cursor-pointer'}
             onClick={onAddTab}
@@ -133,10 +140,7 @@ export default function AppSelect() {
           />
         </div>
       </div>
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden flex items-center justify-center gap-4"
-      >
+      <div ref={containerRef} className={styles.viewContainer}>
         {tabs.map((tab) => (
           <React.Fragment key={tab.uuid}>
             {tab.uuid === activeTabId && (
