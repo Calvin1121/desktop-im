@@ -125,15 +125,3 @@ export interface I18nNames {}
 export interface I18nPositions {}
 
 export interface I18nDomainNames {}
-
-export interface SendMsg {
-  channelNo: number
-  domainId?: number
-  userNo?: number
-  extras?: string
-  content?: string
-  type: MessageTypeCode
-  filename?: string
-  filesize?: string
-  channelType?: number
-}

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { Bounds, Tab, TabUser } from '../model/type'
+import { Bounds, SendMsgParams, Tab, TabUser } from '../model/type'
 
 // Custom APIs for renderer
 const api = {
@@ -16,7 +16,8 @@ const api = {
   onTabUser: (callback: (user: TabUser, tabUuid: string) => void) =>
     ipcRenderer.on('onTabUser', (_, user, tabUuid) => callback(user, tabUuid)),
   onTabSwitched: (callback: (tabUuid: string) => void) =>
-    ipcRenderer.on('onTabSwitched', (_, tabUuid: string) => callback(tabUuid))
+    ipcRenderer.on('onTabSwitched', (_, tabUuid: string) => callback(tabUuid)),
+  sendMsg: (params: SendMsgParams) => ipcRenderer.invoke('sendMsg', params)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

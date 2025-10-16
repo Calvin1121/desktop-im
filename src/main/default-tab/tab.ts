@@ -5,6 +5,8 @@ export class DefaultTab extends TabInstance {
   constructor(tab: Tab) {
     super(tab)
   }
+  protected tabType = ''
+  protected userId = ''
   protected onAuthInfoByUrl() {
     return Promise.resolve({})
   }

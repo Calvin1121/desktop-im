@@ -1,4 +1,5 @@
 import { IM_TYPE } from '@renderer/app.model'
+import { MessageTypeCode } from './index'
 
 export interface Tab {
   name?: string
@@ -19,4 +20,17 @@ export interface TabUser {
   userId: string
   userName: string
   from: IM_TYPE
+}
+
+export interface SendMsgParams {
+  from: IM_TYPE
+  channelNo: number
+  domainId?: number
+  userId?: number
+  extras?: string
+  content?: string
+  type: MessageTypeCode
+  filename?: string
+  filesize?: string
+  channelType?: number
 }

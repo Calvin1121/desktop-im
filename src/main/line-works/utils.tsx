@@ -1,4 +1,4 @@
-import { MessageTypeCode } from './constance'
+import { MessageTypeCode } from "../../model"
 
 export const getMessageType = (
   messageTypeCode: number,

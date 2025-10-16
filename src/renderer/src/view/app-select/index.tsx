@@ -13,6 +13,19 @@ export default function AppSelect() {
   const barRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const isExceed = useMemo(() => tabs.length >= MAX_TAB, [tabs])
+
+  useEffect(() => {
+    const onSendMsgCallback = (event) => {
+      const params = event.detail
+      console.log(params)
+      window.api.sendMsg(params)
+    }
+    window.addEventListener('sendMsg', onSendMsgCallback)
+    return () => {
+      window.removeEventListener('sendMsg', onSendMsgCallback)
+    }
+  }, [])
+
   const isInit = useRef(false)
   const getBounds = () => {
     const { width = window.innerWidth, height = window.innerHeight } =
@@ -111,6 +124,8 @@ export default function AppSelect() {
             const displayName = IMName && userName ? `${IMName}-${userName}` : IMName || '标签页'
             return (
               <div
+                data-userId={item.user?.userId ?? 'unlogin'}
+                data-tabId={item.uuid}
                 title={displayName}
                 onClick={() => onSwitch(item)}
                 className={cn(

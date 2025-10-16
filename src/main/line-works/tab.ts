@@ -1,6 +1,6 @@
-import { UserChannelListItem, UserInfo, SendMsg } from '.'
-import { DebuggerMethod, IM_TYPE } from '../../model'
-import { Tab } from '../../model/type'
+import { UserChannelListItem, UserInfo } from '.'
+import { DebuggerMethod, IM_TYPE, MessageTypeCode } from '../../model'
+import { SendMsgParams, Tab } from '../../model/type'
 import { FetchOptions, fetchWithRetry } from '../fetcher'
 import { TabInstance } from '../base-tab'
 import _ from 'lodash'
@@ -9,7 +9,6 @@ import { tabEventBus, TabEvents } from '../event-bus'
 import { findChangedKey, findUrlInfo, genTempId, parseJsonString } from '../utils'
 import {
   automaticApiKeys,
-  MessageTypeCode,
   automaticOmitApiKeys,
   syncUserChannelListCompareFields,
   forwardInterfaceKeys,
@@ -22,6 +21,8 @@ import { getMessageType } from './utils'
 type URLS_MAP_TYPE = typeof URLS_MAP
 
 export class LineWorksTab extends TabInstance {
+  protected tabType = IM_TYPE.LineWorks
+  protected userId?: string | undefined
   private globalHeaders: FetchOptions['headers'] = {}
   private _requestHostMap: Partial<Record<keyof URLS_MAP_TYPE, any>> = {}
   private set requestHostMap(requestHostMap) {
@@ -36,7 +37,7 @@ export class LineWorksTab extends TabInstance {
     return this._requestHostMap
   }
   private userInfo: UserInfo = {} as UserInfo
-  private channelMap: Map<number, UserChannelListItem> = new Map()
+  private lastChannelItem?: UserChannelListItem
   constructor(tab: Tab) {
     super(tab)
   }
@@ -95,14 +96,12 @@ export class LineWorksTab extends TabInstance {
     if (data && !err) {
       this.userInfo = _.merge(this.userInfo, data)
       const {
-        contactNo: userId = '',
+        contactNo,
         name: { displayName: userName }
       } = this.userInfo
-      this.updateTabUser({ userId: String(userId), userName, from: IM_TYPE.LineWorks })
+      const userId = (this.userId = String(contactNo || ''))
+      this.updateTabUser({ userId, userName, from: IM_TYPE.LineWorks })
     }
-  }
-  private get selfUserId(): string {
-    return String(this.userInfo?.contactNo || '')
   }
   private async syncUserChannelList(request: any) {
     const { url, options } = await this.generateRequestArguments(request)
@@ -110,16 +109,14 @@ export class LineWorksTab extends TabInstance {
     if (!err && data) {
       const items = _.get(data, 'result') as UserChannelListItem[]
       for (const item of items) {
-        const channelNo = item.channelNo
-        const lastItem = this.channelMap.get(channelNo)
         if (
           !_.isEqual(
             _.pick(item, syncUserChannelListCompareFields),
-            _.pick(lastItem, syncUserChannelListCompareFields)
+            _.pick(this.lastChannelItem, syncUserChannelListCompareFields)
           )
         ) {
-          this.channelMap.set(channelNo, item)
-          if (String(this.selfUserId) !== String(item.userNo)) {
+          this.lastChannelItem = item
+          if (String(this.userId) !== String(item.userNo)) {
             const { content, extras, messageTypeCode } = item
             const parsedExtras = parseJsonString(extras)
             const notify: Electron.NotificationConstructorOptions = {
@@ -148,27 +145,30 @@ export class LineWorksTab extends TabInstance {
         if (!err && channeldata?.code === HTTP_STATUS_CODE.Success) {
           const mergedList = _.flatMap(_.get(channeldata, 'result'), 'channelList')
           const uniqueList = _.uniqBy(mergedList, 'channelNo')
-          console.log(uniqueList)
           this.onForwardData(uniqueList)
         }
       }
     }
   }
   private onSendContentMsg(payload: any) {
+    console.log(payload)
     // TODO
   }
   private onSendMediaMsg(payload: any) {
     // TODO
+    console.log(payload)
   }
-  onSendMessage(sendMsg: SendMsg) {
-    const { content, channelNo, domainId, extras, type, filename, filesize, channelType } = sendMsg
-    const userNo = this.selfUserId
+  onSendMessage(params: SendMsgParams) {
+    console.log(params, this)
+    const { content, channelNo, domainId, extras, type, filename, filesize, channelType, userId } =
+      params
+    if (userId !== this.userId) return
     if ([MessageTypeCode.Text, MessageTypeCode.Stk].includes(type)) {
       const payload = {
         serviceId: 'works',
         channelNo,
         tempMessageId: genTempId(),
-        caller: { domainId, userNo },
+        caller: { domainId, userNo: userId },
         extras,
         content,
         msgTid: genTempId(),

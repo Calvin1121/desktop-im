@@ -22,4 +22,18 @@ export enum DebuggerMethod {
   ResponseReceived = 'Network.responseReceived'
 }
 
+export enum MessageTypeCode {
+  Text = 1,
+  VoiceCall = 2,
+  ContactPoint = 3,
+  Address = 4,
+  Image = 11,
+  File = 16,
+  Stk = 18,
+  Task = 25,
+  Survey = 27,
+  Template = 29,
+  VoiceMsg = 39
+}
+
 export const MAX_TAB = 10

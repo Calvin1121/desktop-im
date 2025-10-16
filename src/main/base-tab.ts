@@ -1,6 +1,6 @@
 import { BrowserView, Notification } from 'electron'
 import { join } from 'path'
-import type { Bounds, Tab, TabUser } from '../model/type'
+import type { Bounds, SendMsgParams, Tab, TabUser } from '../model/type'
 import { tabEventBus, TabEvents } from './event-bus'
 import { Worker } from 'node:worker_threads'
 import creatWorker from './workers/wss-worker?nodeWorker'
@@ -22,6 +22,8 @@ export abstract class TabInstance {
   }
   bounds: Bounds = {} as Bounds
   private debuggerMessageHandler?: (event: Electron.Event, method: string, params: any) => void
+  protected abstract tabType?: string
+  protected abstract userId?: string | null
   protected abstract onAuthInfoByUrl(url: string): void
   protected abstract onSendMessage(sendMsg: any): void
   protected abstract onDebuggerMessageHandler(): (
@@ -47,6 +49,14 @@ export abstract class TabInstance {
     this.bounds = bounds
     this.isVisible = true
     await this.view.webContents.loadURL(this.tab.url).then(() => this.attachDebugger())
+  }
+
+  getUserId() {
+    return this.userId
+  }
+
+  getTabType() {
+    return this.tabType
   }
 
   getView(): BrowserView {
@@ -82,6 +92,10 @@ export abstract class TabInstance {
       this.view.setBounds(bounds)
       this.view.setAutoResize({ width: true, height: true })
     }
+  }
+
+  sendMessage(params: SendMsgParams): void {
+    this.onSendMessage(params)
   }
 
   private attachDebugger() {

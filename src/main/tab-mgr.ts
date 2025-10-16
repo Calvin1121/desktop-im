@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { Bounds, Tab } from '../model/type'
+import { Bounds, SendMsgParams, Tab, TabUser } from '../model/type'
 import { TabInstance } from './base-tab'
 import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
@@ -67,7 +67,7 @@ export class TabMgr {
     instance?.updateBounds(bounds)
   }
   onUpdateTabUser() {
-    tabEventBus.once(TabEvents.TabUser, (tabUser, tabUuid) => {
+    tabEventBus.once(TabEvents.TabUser, (tabUser: TabUser, tabUuid: string) => {
       this.mainWindow.webContents.send('onTabUser', tabUser, tabUuid)
     })
   }
@@ -75,5 +75,14 @@ export class TabMgr {
     tabEventBus.on(TabEvents.NotifyClicked, (tabUuid) => {
       this.mainWindow.webContents.send('onTabSwitched', tabUuid)
     })
+  }
+  onSendMsg(params: SendMsgParams) {
+    const { userId, from: tabType } = params
+    for (const [_, tab] of this.tabs) {
+      if (tab.getUserId() === userId && tab.getTabType() === tabType) {
+        tab?.sendMessage?.(params)
+        break
+      }
+    }
   }
 }
