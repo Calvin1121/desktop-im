@@ -1,6 +1,7 @@
 export interface FetchOptions extends RequestInit {
   retryCount?: number
   timeout?: number
+  uuid?: string
 }
 
 const DEFAULT_RETRY = 1

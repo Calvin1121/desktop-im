@@ -1,6 +1,6 @@
 import { BrowserView, Notification } from 'electron'
 import { join } from 'path'
-import type { Bounds, Tab } from '../model/type'
+import type { Bounds, Tab, TabUser } from '../model/type'
 import { tabEventBus, TabEvents } from './event-bus'
 import { Worker } from 'node:worker_threads'
 import creatWorker from './workers/wss-worker?nodeWorker'
@@ -22,7 +22,8 @@ export abstract class TabInstance {
   }
   bounds: Bounds = {} as Bounds
   private debuggerMessageHandler?: (event: Electron.Event, method: string, params: any) => void
-  protected abstract onAuthInfoByUrl(url: string)
+  protected abstract onAuthInfoByUrl(url: string): void
+  protected abstract onSendMessage(sendMsg: any): void
   protected abstract onDebuggerMessageHandler(): (
     event: Electron.Event,
     method: string,
@@ -92,25 +93,23 @@ export abstract class TabInstance {
     this.debuggerMessageHandler = this.onDebuggerMessageHandler()
     webContents.debugger.on('message', this.debuggerMessageHandler)
   }
-  updateTabUser(tabUser) {
+  updateTabUser(tabUser: TabUser) {
     tabEventBus.emit(TabEvents.TabUser, tabUser, this.tab.uuid)
   }
   protected initWssWorker() {
     if (!this.wssWorker) {
       this.wssWorker = creatWorker({ workerData: 'worker' })
 
-      // this.wssWorker.on('message', (msg) => {
-      //   console.log('[Worker] Result:', msg)
-      // })
+      this.wssWorker.on('message', (result) => tabEventBus.emit(TabEvents.WorkerResult, result))
 
       // this.wssWorker.on('error', (err) => {
       //   console.error('[Worker] Error:', err)
       // })
 
-      // this.wssWorker.on('exit', (code) => {
-      //   console.warn('[Worker] exited:', code)
-      //   this.wssWorker = null
-      // })
+      this.wssWorker.on('exit', (code) => {
+        console.warn('[Worker] exited:', code)
+        this.wssWorker = null
+      })
     }
   }
   protected forwardPayload(requestArg: { url: string; options: FetchOptions }) {

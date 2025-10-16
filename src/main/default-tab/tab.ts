@@ -15,4 +15,7 @@ export class DefaultTab extends TabInstance {
   ) => void {
     return () => {}
   }
+  protected onSendMessage() {
+    // do nothing
+  }
 }

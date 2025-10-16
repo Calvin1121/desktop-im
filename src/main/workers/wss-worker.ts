@@ -8,5 +8,5 @@ parentPort.on('message', async (requestArg: { url: string; options: FetchOptions
 
   const [err, data] = await fetchWithRetry(url, options)
 
-  parentPort?.postMessage({ err, data })
+  parentPort?.postMessage({ err, data, requestArg })
 })

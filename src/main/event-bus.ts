@@ -4,5 +4,6 @@ export const tabEventBus = new EventEmitter()
 
 export const TabEvents = {
   TabUser: 'tab:user',
-  NotifyClicked: 'notify:clicked'
+  NotifyClicked: 'notify:clicked',
+  WorkerResult: 'worker:result'
 } as const

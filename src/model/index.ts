@@ -21,3 +21,5 @@ export enum DebuggerMethod {
   WebSocketFrameReceived = 'Network.webSocketFrameReceived',
   ResponseReceived = 'Network.responseReceived'
 }
+
+export const MAX_TAB = 10

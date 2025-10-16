@@ -2,13 +2,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { IconAddCircle, IconClose } from '../../components/iconfont'
 import { v4 } from 'uuid'
 import _ from 'lodash'
-import { BASE_IM_LIST } from '../../../../model'
+import { BASE_IM_LIST, MAX_TAB } from '../../../../model'
 import { PuffLoader } from 'react-spinners'
 import styles from './index.module.scss'
 import cn from '@renderer/utils/classname'
 
 export default function AppSelect() {
-  const MAX_TAB = 5
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string>()
   const barRef = useRef<HTMLDivElement>(null)
@@ -122,7 +121,7 @@ export default function AppSelect() {
                 )}
                 key={item.uuid}
               >
-                <span className="select-none">{displayName}</span>
+                <span className="select-none whitespace-nowrap text-ellipsis overflow-hidden">{displayName}</span>
                 <IconClose onClick={(e) => onClose(item, e)} className="ml-[2px]" size={14} />
               </div>
             )
