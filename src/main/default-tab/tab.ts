@@ -15,9 +15,12 @@ export class DefaultTab extends TabInstance {
     method: string,
     params: any
   ) => void {
-    return () => {}
+    throw new Error('Method onDebuggerMessageHandler not implemented.')
   }
   protected onSendMessage() {
-    // do nothing
+    throw new Error('Method onSendMessage not implemented.')
+  }
+  protected async onUserStatus() {
+    throw new Error('Method onUserStatus not implemented.')
   }
 }

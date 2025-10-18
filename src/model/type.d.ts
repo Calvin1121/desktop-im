@@ -5,9 +5,11 @@ export interface Tab {
   name?: string
   uuid: string
   url: string
+  index?: string
   key?: IM_TYPE
   loading?: boolean
   user?: TabUser
+  loaded?: boolean
 }
 export interface Bounds {
   width: number

@@ -81,7 +81,9 @@ export default function AppSelect() {
   }, [])
   useEffect(() => {
     window.api.onTabLoaded((uuid) => {
-      setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: false } : tab)))
+      setTabs((prev) =>
+        prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: false, loaded: true } : tab))
+      )
     })
     window.api.onTabUser((user, uuid) => {
       setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, user } : tab)))
@@ -136,7 +138,9 @@ export default function AppSelect() {
                 )}
                 key={item.uuid}
               >
-                <span className="select-none whitespace-nowrap text-ellipsis overflow-hidden">{displayName}</span>
+                <span className="select-none whitespace-nowrap text-ellipsis overflow-hidden">
+                  {displayName}
+                </span>
                 <IconClose onClick={(e) => onClose(item, e)} className="ml-[2px]" size={14} />
               </div>
             )
@@ -156,7 +160,7 @@ export default function AppSelect() {
             {tab.uuid === activeTabId && (
               <>
                 {tab.loading && <PuffLoader loading color="#000" size={50} />}
-                {!tab.loading && tabsSelectRender(tab)}
+                {!tab.loading && !tab.loaded && tabsSelectRender(tab)}
               </>
             )}
           </React.Fragment>
