@@ -12,14 +12,15 @@ export const BASE_IM_LIST = [
     name: 'Line Works',
     key: IM_TYPE.LineWorks,
     icon: '📞',
-    url: 'https://auth.worksmobile.com/login/login?accessUrl=https%3A%2F%2Fcommon.worksmobile.com%2Fproxy%2Fmy&isRefreshed=true'
+    url: 'https://talk.worksmobile.com/'
   }
 ]
 
 export enum DebuggerMethod {
   RequestWillBeSent = 'Network.requestWillBeSent',
   WebSocketFrameReceived = 'Network.webSocketFrameReceived',
-  ResponseReceived = 'Network.responseReceived'
+  ResponseReceived = 'Network.responseReceived',
+  RequestWillBeSentExtraInfo = 'Network.requestWillBeSentExtraInfo'
 }
 
 export enum MessageTypeCode {

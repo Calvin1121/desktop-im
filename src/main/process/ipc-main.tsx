@@ -30,8 +30,12 @@ export const initIpcMain = (app: Electron.App, mainWindow: BrowserWindow) => {
   ipcMain.on('resize', (_, tabUuid, bounds) => tabManager.resizeTab(tabUuid, bounds))
   ipcMain.handle('exitApp', async () => {
     const isExit = await exitAppMessageBox()
-    if (isExit) return app.quit()
-    else return isExit
+    if (isExit) {
+      for (const [_, tab] of tabManager.tabInstances) {
+        tab.setUserStatus?.(false)
+      }
+      return app.quit()
+    } else return isExit
   })
   ipcMain.handle('sendMsg', (_, params: SendMsgParams) => tabManager.onSendMsg(params))
   // new api

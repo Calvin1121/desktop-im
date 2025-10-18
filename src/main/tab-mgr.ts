@@ -16,6 +16,10 @@ export class TabMgr {
     this.onNotifyClicked()
   }
 
+  get tabInstances(): Map<string, TabInstance> {
+    return this.tabs
+  }
+
   hideTabs(): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [_, tab] of this.tabs) {
@@ -60,6 +64,7 @@ export class TabMgr {
     if (!instance) return
     this.mainWindow.removeBrowserView(instance.getView())
     instance.destroy()
+    instance.setUserStatus(false)
     this.tabs.delete(tabUuid)
   }
   resizeTab(tabUuid: string, bounds: Electron.Rectangle): void {

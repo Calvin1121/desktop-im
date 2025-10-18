@@ -13,7 +13,7 @@ export abstract class TabInstance {
   readonly tab: Tab
   private wssWorker: Worker | null = null
   private _isVisible: boolean = false
-  set isVisible(visible) {
+  set isVisible(visible: boolean) {
     this._isVisible = visible
     this.onSwitchVisibleStatus(visible)
   }
@@ -24,6 +24,7 @@ export abstract class TabInstance {
   private debuggerMessageHandler?: (event: Electron.Event, method: string, params: any) => void
   protected abstract tabType?: string
   protected abstract userId?: string | null
+  protected abstract onUserStatus(isOnline: boolean): Promise<void>
   protected abstract onAuthInfoByUrl(url: string): void
   protected abstract onSendMessage(sendMsg: any): void
   protected abstract onDebuggerMessageHandler(): (
@@ -97,7 +98,9 @@ export abstract class TabInstance {
   sendMessage(params: SendMsgParams): void {
     this.onSendMessage(params)
   }
-
+  async setUserStatus(isOnline: boolean) {
+    await this.onUserStatus(isOnline)
+  }
   private attachDebugger() {
     const webContents = this.view.webContents
     if (!webContents.debugger.isAttached()) {
@@ -126,7 +129,7 @@ export abstract class TabInstance {
       })
     }
   }
-  protected forwardPayload(requestArg: { url: string; options: FetchOptions }) {
+  protected workerRequest(requestArg: { url: string; options: FetchOptions }) {
     this.initWssWorker()
     this.wssWorker?.postMessage(requestArg)
   }

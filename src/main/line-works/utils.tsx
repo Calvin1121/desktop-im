@@ -1,4 +1,8 @@
-import { MessageTypeCode } from "../../model"
+import { BASE_IM_LIST, IM_TYPE, MessageTypeCode } from '../../model'
+import { SendMsgParams } from '../../model/type'
+import { FetchOptions } from '../fetcher'
+import { genTempId } from '../utils'
+import { URLS_MAP } from './constance'
 
 export const getMessageType = (
   messageTypeCode: number,
@@ -44,4 +48,51 @@ export const getMessageType = (
       displayContent = '「未知类型消息」'
   }
   return displayContent
+}
+
+export const genHeaders = (headers: FetchOptions['headers']) => {
+  return {
+    'Content-Type': 'application/json',
+    Connection: 'keep-alive',
+    ...headers
+  }
+}
+
+export const getBaseUrl = (): string => {
+  return BASE_IM_LIST.find((item) => item.key === IM_TYPE.LineWorks)!.url
+}
+
+export const genContentMsg = (
+  params: SendMsgParams
+): { url: string; payload: Record<string, any> } => {
+  const { content, channelNo, domainId, extras, type, userId } = params
+  const tempId = genTempId()
+  const url = getBaseUrl() + URLS_MAP.sendMessage
+  const payload = {
+    serviceId: 'works',
+    channelNo,
+    tempMessageId: tempId,
+    caller: { domainId, userNo: userId },
+    extras,
+    content,
+    msgTid: tempId,
+    type
+  }
+  return { url, payload }
+}
+
+export const genMediaMsg = (
+  params: SendMsgParams
+): { url: string; payload: Record<string, any> } => {
+  const { filename, filesize, channelType, type, channelNo } = params
+  const url = getBaseUrl() + URLS_MAP.issueResourcePath
+  const payload = {
+    serviceId: 'works',
+    filename,
+    filesize,
+    channelNo,
+    msgType: type,
+    channelType
+  }
+  return { url, payload }
 }

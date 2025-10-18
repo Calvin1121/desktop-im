@@ -67,3 +67,11 @@ export function findChangedKey<T extends object>(
 
   return null
 }
+
+export function mergeUnique<T extends Record<string, any>>(
+  oldArr: T[],
+  newArr: T[],
+  key: keyof T
+): T[] {
+  return _.values(_.assign(_.keyBy(oldArr, key), _.keyBy(newArr, key)))
+}

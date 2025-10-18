@@ -6,24 +6,25 @@ import { TabInstance } from '../base-tab'
 import _ from 'lodash'
 import { apis, baseUrl } from '../../api'
 import { tabEventBus, TabEvents } from '../event-bus'
-import { findChangedKey, findUrlInfo, genTempId, parseJsonString } from '../utils'
+import { findChangedKey, findUrlInfo, mergeUnique, parseJsonString } from '../utils'
 import {
   automaticApiKeys,
   automaticOmitApiKeys,
   syncUserChannelListCompareFields,
   forwardInterfaceKeys,
   URLS_MAP,
-  userOptionsParams
+  userOptionsParams,
+  cookieKeys
 } from './constance'
 import { HTTP_STATUS_CODE } from '../../model/api.constance'
-import { getMessageType } from './utils'
+import { genContentMsg, genHeaders, genMediaMsg, getMessageType } from './utils'
 
 type URLS_MAP_TYPE = typeof URLS_MAP
 
 export class LineWorksTab extends TabInstance {
   protected tabType = IM_TYPE.LineWorks
   protected userId?: string | undefined
-  private globalHeaders: FetchOptions['headers'] = {}
+  private cookies: { name: string; value: string }[] = []
   private _requestHostMap: Partial<Record<keyof URLS_MAP_TYPE, any>> = {}
   private set requestHostMap(requestHostMap) {
     const diffKey = findChangedKey(this._requestHostMap, requestHostMap, automaticOmitApiKeys)
@@ -52,6 +53,21 @@ export class LineWorksTab extends TabInstance {
       })
       .catch(() => ({}))
   }
+  updateCookies(associatedCookies: Array<{ cookie: { name: string; value: string } }>) {
+    const { cookies: _cookies = [] } = this
+    const cookies = associatedCookies.map((item) => item.cookie)
+    this.cookies = mergeUnique(_cookies, cookies, 'name')
+  }
+  get cookieString(): string {
+    return _.chain(cookieKeys)
+      .map((key) => {
+        const { value } = _.find(this.cookies, { name: key })
+        return value ? `${key}=${value}` : null
+      })
+      .compact()
+      .join(';')
+      .value()
+  }
   onDebuggerMessageHandler() {
     return (_: Electron.Event, method: string, params: any) => {
       if (method === DebuggerMethod.RequestWillBeSent) {
@@ -63,13 +79,16 @@ export class LineWorksTab extends TabInstance {
         }
         this.requestWillBeSent(params)
       }
+      if (method === DebuggerMethod.RequestWillBeSentExtraInfo) {
+        this.updateCookies(params.associatedCookies)
+      }
     }
   }
   private async onForwardData(params) {
     const url = `${baseUrl}${apis.webhookLinework}`
     const payload = { wssPayload: params }
     const options = { body: JSON.stringify(payload), method: 'POST' }
-    this.forwardPayload({ url, options })
+    this.workerRequest({ url, options })
   }
   private requestWillBeSent(params: any) {
     const { request } = params
@@ -85,7 +104,6 @@ export class LineWorksTab extends TabInstance {
     const { url, method, headers: _headers, postData, hasPostData } = request ?? {}
     const auth = url ? await this.onAuthInfoByUrl(url) : {}
     const headers = { ..._headers, ...auth }
-    this.globalHeaders = headers
     const options = { headers, method }
     if (hasPostData) Object.assign(options, { body: postData })
     return { url, options }
@@ -101,6 +119,7 @@ export class LineWorksTab extends TabInstance {
       } = this.userInfo
       const userId = (this.userId = String(contactNo || ''))
       this.updateTabUser({ userId, userName, from: IM_TYPE.LineWorks })
+      this.onUserStatus(true)
     }
   }
   private async syncUserChannelList(request: any) {
@@ -150,42 +169,29 @@ export class LineWorksTab extends TabInstance {
       }
     }
   }
-  private onSendContentMsg(payload: any) {
-    console.log(payload)
-    // TODO
+  protected async onUserStatus(isOnline: boolean) {
+    console.log(isOnline)
   }
-  private onSendMediaMsg(payload: any) {
-    // TODO
-    console.log(payload)
+  private async onSendMsgFunc(url, payload) {
+    const body = JSON.stringify(payload)
+    const contentLength = String(Buffer.byteLength(body, 'utf8'))
+    const options: FetchOptions = {
+      method: 'POST',
+      headers: genHeaders({ cookie: this.cookieString, 'Content-Length': contentLength }),
+      body
+    }
+    this.workerRequest({ url, options })
   }
   onSendMessage(params: SendMsgParams) {
-    console.log(params, this)
-    const { content, channelNo, domainId, extras, type, filename, filesize, channelType, userId } =
-      params
+    const { type, userId } = params
     if (userId !== this.userId) return
     if ([MessageTypeCode.Text, MessageTypeCode.Stk].includes(type)) {
-      const payload = {
-        serviceId: 'works',
-        channelNo,
-        tempMessageId: genTempId(),
-        caller: { domainId, userNo: userId },
-        extras,
-        content,
-        msgTid: genTempId(),
-        type
-      }
-      this.onSendContentMsg(payload)
+      const { url, payload } = genContentMsg(params)
+      this.onSendMsgFunc(url, payload)
     }
     if ([MessageTypeCode.Image, MessageTypeCode.File].includes(type)) {
-      const payload = {
-        serviceId: 'works',
-        filename,
-        filesize,
-        channelNo,
-        msgType: type,
-        channelType
-      }
-      this.onSendMediaMsg(payload)
+      const { url, payload } = genMediaMsg(params)
+      this.onSendMsgFunc(url, payload)
     }
   }
 }

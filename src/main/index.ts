@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { initIpcMain } from './process/ipc-main'
+import { exitAppMessageBox, initIpcMain } from './process/ipc-main'
 import { onCustomerMenu } from './process/menu'
 
 let mainWindow: BrowserWindow
@@ -60,6 +60,12 @@ app.whenReady().then(() => {
 
   createWindow()
   initIpcMain(app, mainWindow)
+  // mainWindow.on('close', async (event) => {
+  //   const isExit = await exitAppMessageBox()
+  //   if (!isExit) {
+  //     event.preventDefault()
+  //   }
+  // })
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
