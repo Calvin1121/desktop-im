@@ -1,4 +1,4 @@
-import { BrowserView, Notification } from 'electron'
+import { BrowserView } from 'electron'
 import { join } from 'path'
 import type { Bounds, SendMsgParams, Tab, TabUser } from '../model/type'
 import { tabEventBus, TabEvents } from './event-bus'

@@ -19,3 +19,9 @@
 .viewContainer {
     @apply flex-1 overflow-hidden flex items-center justify-center gap-4;
 }
+.toolBlock {
+    @apply h-[var(--tool-bar)] bg-[transparent] flex items-center px-2 gap-2;
+}
+.toasterContainer {
+    inset: 6px !important;
+}

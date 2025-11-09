@@ -10,6 +10,8 @@ declare global {
   interface Window {
     electron: ElectronAPI
     api: {
+      refreshTab: (tabUuid: string) => void
+      toggleTab: (tabUuid: string, status: boolean) => void
       openUrl: (tab: Tab, bounds: Bounds) => void
       openTab: () => void
       switchTab: (tabUuid: string, bounds: Bounds) => void

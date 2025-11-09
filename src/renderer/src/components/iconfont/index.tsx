@@ -2,6 +2,9 @@
 /* eslint-disable */
 
 import React, { SVGAttributes, FunctionComponent } from 'react';
+import IconSwitch from './IconSwitch';
+import IconShuaxin from './IconShuaxin';
+import IconProxy from './IconProxy';
 import IconClose from './IconClose';
 import IconAddCircle from './IconAddCircle';
 import IconAdjustment from './IconAdjustment';
@@ -11,6 +14,9 @@ import IconArrowDownCircle from './IconArrowDownCircle';
 import IconArrowLeft from './IconArrowLeft';
 import IconArrowLeftCircle from './IconArrowLeftCircle';
 import IconArrowRight from './IconArrowRight';
+export { default as IconSwitch } from './IconSwitch';
+export { default as IconShuaxin } from './IconShuaxin';
+export { default as IconProxy } from './IconProxy';
 export { default as IconClose } from './IconClose';
 export { default as IconAddCircle } from './IconAddCircle';
 export { default as IconAdjustment } from './IconAdjustment';
@@ -21,7 +27,7 @@ export { default as IconArrowLeft } from './IconArrowLeft';
 export { default as IconArrowLeftCircle } from './IconArrowLeftCircle';
 export { default as IconArrowRight } from './IconArrowRight';
 
-export type IconNames = 'close' | 'add-circle' | 'adjustment' | 'app' | 'arrow-down' | 'arrow-down-circle' | 'arrow-left' | 'arrow-left-circle' | 'arrow-right';
+export type IconNames = 'switch' | 'shuaxin' | 'proxy' | 'close' | 'add-circle' | 'adjustment' | 'app' | 'arrow-down' | 'arrow-down-circle' | 'arrow-left' | 'arrow-left-circle' | 'arrow-right';
 
 interface Props extends Omit<SVGAttributes<SVGElement>, 'color'> {
   name: IconNames;
@@ -31,6 +37,12 @@ interface Props extends Omit<SVGAttributes<SVGElement>, 'color'> {
 
 const IconFont: FunctionComponent<Props> = ({ name, ...rest }) => {
   switch (name) {
+    case 'switch':
+      return <IconSwitch {...rest} />;
+    case 'shuaxin':
+      return <IconShuaxin {...rest} />;
+    case 'proxy':
+      return <IconProxy {...rest} />;
     case 'close':
       return <IconClose {...rest} />;
     case 'add-circle':

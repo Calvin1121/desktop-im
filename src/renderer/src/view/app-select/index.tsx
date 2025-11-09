@@ -6,14 +6,32 @@ import { BASE_IM_LIST, MAX_TAB } from '../../../../model'
 import { PuffLoader } from 'react-spinners'
 import styles from './index.module.scss'
 import cn from '@renderer/utils/classname'
+import TabsSelect from './tabsSelect'
+import ToolBar from './index.toolbar'
+import ToolPanel from './index.toolpanel'
+import { toastStyle, ToolCallback } from './index.constant'
+import toast, { Toaster } from 'react-hot-toast'
 
 export default function AppSelect() {
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string>()
+  const [currentTool, setCurrentTool] = useState<ToolCallback>()
   const barRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const isExceed = useMemo(() => tabs.length >= MAX_TAB, [tabs])
 
+  const activeTab = useMemo(
+    () => tabs.find((item) => item.uuid === activeTabId),
+    [tabs, activeTabId]
+  )
+  const onUpdateTabs = useCallback((uuid?: string, callback?: (tab: Tab) => void) => {
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.uuid === uuid) callback?.(tab)
+        return tab
+      })
+    )
+  }, [])
   useEffect(() => {
     const onSendMsgCallback = (event) => {
       const params = event.detail
@@ -71,28 +89,27 @@ export default function AppSelect() {
     if (!isInit.current) onAddTab()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const onOpenUrl = useCallback((item: Tab) => {
-    const bounds = getBounds()
-    setActiveTabId(item.uuid)
-    setTabs((prev) =>
-      prev.map((tab) => (tab.uuid === item.uuid ? { ...item, loading: true } : tab))
-    )
-    window.api.openUrl(item, bounds)
-  }, [])
+  const onOpenUrl = useCallback(
+    (item: Tab) => {
+      const bounds = getBounds()
+      setActiveTabId(item.uuid)
+      onUpdateTabs(item.uuid, (tab) => Object.assign(tab, { ...item, loading: true }))
+      window.api.openUrl(item, bounds)
+    },
+    [onUpdateTabs]
+  )
   useEffect(() => {
-    window.api.onTabLoaded((uuid) => {
-      setTabs((prev) =>
-        prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: false, loaded: true } : tab))
-      )
-    })
+    window.api.onTabLoaded((uuid) =>
+      onUpdateTabs(uuid, (tab) => Object.assign(tab, { loading: false, loaded: true }))
+    )
     window.api.onTabUser((user, uuid) => {
-      setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, user } : tab)))
+      onUpdateTabs(uuid, (tab) => Object.assign(tab, user))
     })
     window.api.onTabSwitched((uuid) => {
       setActiveTabId(uuid)
       window.api.switchTab(uuid, getBounds())
     })
-  }, [])
+  }, [onUpdateTabs])
   useEffect(() => {
     const onResize = _.debounce(() => {
       activeTabId && window.api.resize(activeTabId, getBounds())
@@ -102,22 +119,56 @@ export default function AppSelect() {
       window.removeEventListener('resize', onResize)
     }
   }, [activeTabId])
-  const tabsSelectRender = useCallback(
-    (tab: Tab) =>
-      BASE_IM_LIST.map((item) => (
-        <div
-          onClick={() => onOpenUrl({ ...tab, ...item })}
-          key={item.name}
-          className="flex flex-col cursor-pointer"
-        >
-          <span>{item.icon}</span>
-          <span>{item.name}</span>
-        </div>
-      )),
-    [onOpenUrl]
-  )
+  const onRefreshTab = () => {
+    const onSaving = async (tab: Tab) => {
+      window.api.refreshTab(tab.uuid)
+      onUpdateTabs(activeTabId, (tab) => {
+        if (tab.isRefreshing) tab.isRefreshing = false
+      })
+    }
+    onUpdateTabs(activeTabId, (tab) => {
+      if (!tab.isRefreshing) {
+        tab.isRefreshing = true
+        toast.promise(onSaving(tab), {
+          loading: '刷新中',
+          success: '刷新成功'
+        })
+      }
+    })
+  }
+
+  const onTapToolCallback = (callback: ToolCallback) => {
+    if ([ToolCallback.onTabRefresh].includes(callback)) {
+      onRefreshTab()
+      return
+    }
+    if (callback === ToolCallback.onTogglePanel && currentTool) {
+      setCurrentTool(undefined)
+      return
+    }
+    const _callback =
+      callback === ToolCallback.onTogglePanel && !currentTool
+        ? ToolCallback.onSetTabProxy
+        : callback
+    setCurrentTool(_callback)
+  }
+
+  useEffect(() => {
+    if (ToolCallback.onSetTabProxy === currentTool || !currentTool) {
+      onUpdateTabs(activeTabId, (tab) => {
+        tab.isPanelVisible = !!currentTool
+        window.api.toggleTab(tab.uuid, !tab.isPanelVisible)
+      })
+    }
+  }, [activeTabId, currentTool, onUpdateTabs])
+
   return (
     <div className={styles.container}>
+      <Toaster
+        position="top-center"
+        toastOptions={{ style: toastStyle }}
+        containerClassName={styles.toasterContainer}
+      />
       <div ref={barRef} className={styles.tabBar}>
         <div className={styles.tabBarContent}>
           {tabs.map((item) => {
@@ -159,13 +210,34 @@ export default function AppSelect() {
           <React.Fragment key={tab.uuid}>
             {tab.uuid === activeTabId && (
               <>
-                {tab.loading && <PuffLoader loading color="#000" size={50} />}
-                {!tab.loading && !tab.loaded && tabsSelectRender(tab)}
+                {tab.loading && !tab.isPanelVisible && (
+                  <PuffLoader loading color="#000" size={50} />
+                )}
+                {!tab.loading && !tab.loaded && (
+                  <TabsSelect tab={tab} tabs={BASE_IM_LIST} onOpenUrl={onOpenUrl} />
+                )}
+                {tab.isPanelVisible && (
+                  <ToolPanel
+                    currentTool={currentTool}
+                    onCancel={() => onTapToolCallback(ToolCallback.onTogglePanel)}
+                  />
+                )}
               </>
             )}
           </React.Fragment>
         ))}
       </div>
+      {tabs.map((tab) => (
+        <React.Fragment key={tab.uuid}>
+          <ToolBar
+            currentTool={currentTool}
+            tab={tab}
+            activeTab={activeTab}
+            onTapToolCallback={onTapToolCallback}
+          />
+        </React.Fragment>
+      ))}
+      {}
     </div>
   )
 }

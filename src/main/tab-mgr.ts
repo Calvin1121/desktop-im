@@ -19,7 +19,22 @@ export class TabMgr {
   get tabInstances(): Map<string, TabInstance> {
     return this.tabs
   }
-
+  toggleTab(tabUuid: string, status: boolean) {
+    const tab = this.tabs.get(tabUuid)
+    if (tab) {
+      tab.isVisible = status
+    }
+  }
+  refreshTab(tabUuid: string) {
+    const tab = this.tabs.get(tabUuid)
+    const webContents = tab?.view.webContents
+    if (webContents) {
+      webContents.once('did-finish-load', () => {
+        console.log('did-finish-load')
+      })
+      webContents.reloadIgnoringCache()
+    }
+  }
   hideTabs(): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [_, tab] of this.tabs) {

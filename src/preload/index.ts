@@ -4,6 +4,8 @@ import { Bounds, SendMsgParams, Tab, TabUser } from '../model/type'
 
 // Custom APIs for renderer
 const api = {
+  refreshTab: (tabUuid: string) => ipcRenderer.send('refreshTab', tabUuid),
+  toggleTab: (tabUuid: string, status: boolean) => ipcRenderer.send('toggleTab', tabUuid, status),
   openUrl: (tab: Tab, bounds: Bounds) => ipcRenderer.send('openUrl', tab, bounds),
   openTab: () => ipcRenderer.send('openTab'),
   switchTab: (tabUuid: string, bounds: Bounds) => ipcRenderer.send('switchTab', tabUuid, bounds),

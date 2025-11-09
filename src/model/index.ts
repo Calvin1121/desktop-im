@@ -5,9 +5,9 @@ export enum IM_TYPE {
   LineWorks = 'line_works'
 }
 export const BASE_IM_LIST = [
-  { name: '微信', key: IM_TYPE.Wechat, icon: '💬', url: 'https://wx.qq.com/' },
+  // { name: '微信', key: IM_TYPE.Wechat, icon: '💬', url: 'https://wx.qq.com/' },
   { name: '钉钉', key: IM_TYPE.DTalk, icon: '📎', url: 'https://im.dingtalk.com/' },
-  { name: '飞书', key: IM_TYPE.Zerak, icon: '🕊️', url: 'https://www.feishu.cn/' },
+  // { name: '飞书', key: IM_TYPE.Zerak, icon: '🕊️', url: 'https://www.feishu.cn/' },
   {
     name: 'Line Works',
     key: IM_TYPE.LineWorks,

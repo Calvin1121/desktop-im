@@ -20,6 +20,8 @@ export const initIpcMain = (app: Electron.App, mainWindow: BrowserWindow) => {
   const tabManager = new TabMgr(mainWindow)
 
   // new api
+  ipcMain.on('refreshTab', (_, tabUuid) => tabManager.refreshTab(tabUuid))
+  ipcMain.on('toggleTab', (_, tabUuid, status) => tabManager.toggleTab(tabUuid, status))
   ipcMain.on('openUrl', (_, tab, bounds) => tabManager.openUrl(tab, bounds))
   ipcMain.on('switchTab', (_, tabUuid, bounds) => tabManager.switchTab(tabUuid, bounds))
   ipcMain.on('openTab', () => tabManager.hideTabs())

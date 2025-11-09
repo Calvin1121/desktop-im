@@ -10,6 +10,9 @@ export interface Tab {
   loading?: boolean
   user?: TabUser
   loaded?: boolean
+  isPanelVisible?: boolean
+  proxy?: string
+  isRefreshing?: boolean
 }
 export interface Bounds {
   width: number
