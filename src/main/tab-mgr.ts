@@ -5,6 +5,8 @@ import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
 import { tabEventBus, TabEvents } from './event-bus'
 import { DefaultTab } from './default-tab/tab'
+import UserAgent from 'user-agents'
+import { FetchOptions, fetchWithRetry } from './fetcher'
 
 export class TabMgr {
   private mainWindow: BrowserWindow
@@ -25,15 +27,32 @@ export class TabMgr {
       tab.isVisible = status
     }
   }
-  refreshTab(tabUuid: string) {
-    const tab = this.tabs.get(tabUuid)
-    const webContents = tab?.view.webContents
-    if (webContents) {
-      webContents.once('did-finish-load', () => {
-        console.log('did-finish-load')
-      })
-      webContents.reloadIgnoringCache()
+  async callAPI(url: string, options?: FetchOptions) {
+    const [err, data] = await fetchWithRetry(url, { ...options, retryCount: 0 })
+    return { err, data }
+  }
+  genUserAgent(system?: string[]) {
+    try {
+      if (system?.length) {
+        const platform = system[Math.floor(Math.random() * system.length)]
+        return new UserAgent({ platform }).toString()
+      }
+    } catch (error) {
+      console.error(error)
     }
+    return new UserAgent().toString()
+  }
+  refreshTab(tabUuid: string) {
+    return new Promise((resolve, reject) => {
+      const tab = this.tabs.get(tabUuid)
+      const webContents = tab?.view.webContents
+      if (webContents) {
+        webContents.once('did-finish-load', () => resolve(true))
+        webContents.reloadIgnoringCache()
+      } else {
+        reject(false)
+      }
+    })
   }
   hideTabs(): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

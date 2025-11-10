@@ -5,7 +5,8 @@ import { createRoot } from 'react-dom/client'
 import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
 import { MainProvider } from './main.provider'
-import { InitialMain } from './main.intinal'
+import { InitialMain } from './main.initial'
+import { ConfigSWR } from './main.swr'
 
 // Create a new router instance
 const router = createRouter({
@@ -23,9 +24,11 @@ declare module '@tanstack/react-router' {
 }
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MainProvider>
-      <InitialMain />
-      <RouterProvider router={router} />
-    </MainProvider>
+    <ConfigSWR>
+      <MainProvider>
+        <InitialMain />
+        <RouterProvider router={router} />
+      </MainProvider>
+    </ConfigSWR>
   </StrictMode>
 )

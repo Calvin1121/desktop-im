@@ -121,7 +121,7 @@ export default function AppSelect() {
   }, [activeTabId])
   const onRefreshTab = () => {
     const onSaving = async (tab: Tab) => {
-      window.api.refreshTab(tab.uuid)
+      await window.api.refreshTab(tab.uuid)
       onUpdateTabs(activeTabId, (tab) => {
         if (tab.isRefreshing) tab.isRefreshing = false
       })

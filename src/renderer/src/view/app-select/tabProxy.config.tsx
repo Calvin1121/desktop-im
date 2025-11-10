@@ -21,10 +21,9 @@ export const ProxyConfig = [
         type: FieldType.Checkbox,
         tips: '',
         options: [
-          { label: 'Windows', value: 'windows' },
-          { label: 'MacOs', value: 'mac' },
-          { label: 'Android', value: 'android' },
-          { label: 'iOS', value: 'ios' }
+          { label: 'Windows', value: 'Win32' },
+          { label: 'MacOs', value: 'MacIntel' },
+          { label: 'Others', value: 'Linux armv8l' }
         ] as any
       },
       {
@@ -52,12 +51,8 @@ export const ProxyConfig = [
         label: '选择代理',
         key: 'select',
         value: null as any,
-        type: FieldType.Select,
-        tips: '',
-        options: [
-          { label: 'Windows', value: 'windows' },
-          { label: 'MacOs', value: 'mac' }
-        ] as any
+        type: FieldType.Input,
+        tips: ''
       },
       {
         label: '代理类型',

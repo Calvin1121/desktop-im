@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { FieldType, ProxyConfig, ProxyConfigSection } from './tabProxy.config'
 import { Button, Checkbox, Form, Input, Select, Space } from 'antd'
 
@@ -9,41 +9,58 @@ interface Props {
 
 export default function TabProxy(props: Props) {
   const [form] = Form.useForm()
-  const onGenUserAgent = (key: string) => {
-    const value = form.getFieldValue('system')
-    console.log(value, key)
-  }
-  const onSuffixClick = (section: ProxyConfigSection) => {
-    if (section.key === 'agent') onGenUserAgent(section.key)
-  }
+  const onGenUserAgent = useCallback(
+    async (key: string) => {
+      const value = form.getFieldValue('system')
+      const ua = await window.api.genUserAgent(value)
+      form.setFieldValue(key, ua)
+    },
+    [form]
+  )
+  const onSuffixClick = useCallback(
+    (section: ProxyConfigSection) => {
+      if (section.key === 'agent') onGenUserAgent(section.key)
+    },
+    [onGenUserAgent]
+  )
   const onFinish = (values: any) => {
-    console.log(values, ProxyConfig)
+    console.log(values)
   }
-  const dynamicField = useCallback((section: ProxyConfigSection) => {
-    const options = ('options' in section && section.options) || null
-    const isSingleCheckbox = section.type === FieldType.Checkbox && !options
-    const props = (('props' in section && section.props) || {}) as any
-    const { suffix: _suffix, ...rest } = props
-    const suffix = _suffix instanceof Function ? _suffix(() => onSuffixClick(section)) : _suffix
-    return (
-      <>
-        {isSingleCheckbox && <Checkbox value={section.value}>{section.label}</Checkbox>}
-        {!isSingleCheckbox && (
-          <React.Fragment>
-            {section.type === FieldType.Input && (
-              <Input {...rest} suffix={suffix} className="!w-full" value={section.value} />
-            )}
-            {section.type === FieldType.Checkbox && (
-              <Checkbox.Group options={options} value={section.value}></Checkbox.Group>
-            )}
-            {section.type === FieldType.Select && (
-              <Select className="!w-1/2" options={options}></Select>
-            )}
-          </React.Fragment>
-        )}
-      </>
-    )
-  }, [])
+  useEffect(() => {
+    const agent = window.navigator.userAgent
+    form.setFieldsValue({ agent })
+    window.api.callAPI('https://ipwho.org/me').then((res) => {
+      console.log(res)
+    })
+  }, [form])
+  const dynamicField = useCallback(
+    (section: ProxyConfigSection) => {
+      const options = ('options' in section && section.options) || null
+      const isSingleCheckbox = section.type === FieldType.Checkbox && !options
+      const props = (('props' in section && section.props) || {}) as any
+      const { suffix: _suffix, ...rest } = props
+      const suffix = _suffix instanceof Function ? _suffix(() => onSuffixClick(section)) : _suffix
+      return (
+        <>
+          {isSingleCheckbox && <Checkbox value={section.value}>{section.label}</Checkbox>}
+          {!isSingleCheckbox && (
+            <React.Fragment>
+              {section.type === FieldType.Input && (
+                <Input {...rest} suffix={suffix} className="!w-full" value={section.value} />
+              )}
+              {section.type === FieldType.Checkbox && (
+                <Checkbox.Group options={options} value={section.value}></Checkbox.Group>
+              )}
+              {section.type === FieldType.Select && (
+                <Select className="!w-full" options={options}></Select>
+              )}
+            </React.Fragment>
+          )}
+        </>
+      )
+    },
+    [onSuffixClick]
+  )
   const dynamicFormItem = useCallback(
     (section) => {
       const { key, label } = section

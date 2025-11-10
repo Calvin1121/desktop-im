@@ -10,7 +10,9 @@ declare global {
   interface Window {
     electron: ElectronAPI
     api: {
-      refreshTab: (tabUuid: string) => void
+      callAPI: (url: string, options?: FetchOptions) => Promise<[Error | null, any, () => void]>
+      genUserAgent: (system?: string[]) => Promise<string>
+      refreshTab: (tabUuid: string) => Promise<boolean>
       toggleTab: (tabUuid: string, status: boolean) => void
       openUrl: (tab: Tab, bounds: Bounds) => void
       openTab: () => void
