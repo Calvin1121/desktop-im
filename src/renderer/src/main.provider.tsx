@@ -1,8 +1,17 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react'
 
+interface IToast {
+  callback?: Promise<any> | (() => any)
+  loading?: string
+  success?: string
+  error?: string
+}
+
 interface IMainContextState {
+  isSkipLogin: boolean
   loginInfo?: Record<string, any>
+  toast?: IToast
 }
 
 type InStates = Partial<IMainContextState> | ((states: IMainContextState) => IMainContextState)
@@ -12,7 +21,7 @@ interface IMainContext {
   updateStates: (inStates: InStates) => void
 }
 const States: IMainContextState = {
-  loginInfo: undefined
+  isSkipLogin: true
 }
 
 export const MainContext = createContext<IMainContext>({
@@ -30,8 +39,8 @@ export function MainProvider({ children }: { children: ReactNode }) {
 }
 export function useMainStates() {
   const { states, updateStates } = useContext(MainContext)
-  console.log(states)
+  const onToast = useCallback((toast?: IToast) => updateStates({ toast }), [updateStates])
   const isLoged = useMemo(() => !!states.loginInfo, [states])
-  console.log(isLoged)
-  return { isLoged, states, updateStates }
+  const isSkipLogin = useMemo(() => states.isSkipLogin, [states.isSkipLogin])
+  return { isLoged, isSkipLogin, states, updateStates, onToast }
 }

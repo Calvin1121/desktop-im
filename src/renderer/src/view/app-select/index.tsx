@@ -9,10 +9,11 @@ import cn from '@renderer/utils/classname'
 import TabsSelect from './tabsSelect'
 import ToolBar from './index.toolbar'
 import ToolPanel from './index.toolpanel'
-import { toastStyle, ToolCallback } from './index.constant'
-import toast, { Toaster } from 'react-hot-toast'
+import { ToolCallback } from './index.constant'
+import { useMainStates } from '@renderer/main.provider'
 
 export default function AppSelect() {
+  const { onToast } = useMainStates()
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string>()
   const barRef = useRef<HTMLDivElement>(null)
@@ -124,20 +125,16 @@ export default function AppSelect() {
     }
   }, [activeTabId])
   const onRefreshTab = () => {
-    const onSaving = async (tab: Tab) => {
-      await window.api.refreshTab(tab.uuid)
+    if (activeTab?.isRefreshing) return
+    const onSaving = async () => {
+      await window.api.refreshTab(activeTabId!)
       onUpdateTabs(activeTabId, (tab) => {
         if (tab.isRefreshing) tab.isRefreshing = false
       })
     }
+    onToast({ callback: onSaving(), loading: '刷新中', success: '刷新成功' })
     onUpdateTabs(activeTabId, (tab) => {
-      if (!tab.isRefreshing) {
-        tab.isRefreshing = true
-        toast.promise(onSaving(tab), {
-          loading: '刷新中',
-          success: '刷新成功'
-        })
-      }
+      if (!tab.isRefreshing) tab.isRefreshing = true
     })
   }
   const onTogglePanel = (toolType) => {
@@ -187,11 +184,6 @@ export default function AppSelect() {
 
   return (
     <div className={styles.container}>
-      <Toaster
-        position="top-center"
-        toastOptions={{ style: toastStyle }}
-        containerClassName={styles.toasterContainer}
-      />
       <div ref={barRef} className={styles.tabBar}>
         <div className={styles.tabBarContent}>
           {tabs.map((item) => {
