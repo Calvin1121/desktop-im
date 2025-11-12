@@ -1,11 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { Bounds, SendMsgParams, Tab, TabUser } from '../model/type'
-import { FetchOptions } from '../main/fetcher'
 
 // Custom APIs for renderer
 const api = {
-  callAPI: (url: string, options?: FetchOptions) => ipcRenderer.invoke('callAPI', url, options),
+  getIPLocation: () => ipcRenderer.invoke('getIPLocation'),
   genUserAgent: (system?: string[]) => ipcRenderer.invoke('genUserAgent', system),
   refreshTab: (tabUuid: string) => ipcRenderer.invoke('refreshTab', tabUuid),
   toggleTab: (tabUuid: string, status: boolean) => ipcRenderer.send('toggleTab', tabUuid, status),

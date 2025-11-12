@@ -1,35 +1,32 @@
 import cn from '@renderer/utils/classname'
 import styles from './index.module.scss'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { ACTIVE_TOOL_COLOR, TOOL_CONFIG, ToolCallback } from './index.constant'
 
 interface Props {
-  currentTool?: ToolCallback
   tab: Tab
-  activeTab?: Tab
   onTapToolCallback: (callback: ToolCallback) => void
 }
-
-export default function ToolBar(props: Props) {
-  const { tab, activeTab, onTapToolCallback, currentTool } = props
+const ToolBar: React.FC<Props> = React.memo((props: Props) => {
+  const { tab, onTapToolCallback } = props
+  const currentTool = useMemo(() => tab.currentTool, [tab.currentTool])
   const onTapTool = (callback: ToolCallback) => {
     onTapToolCallback(callback)
   }
-  if (tab.uuid === activeTab?.uuid) {
+  if (tab?.uuid) {
     return (
       <div className={cn(styles.toolBlock)}>
-        {activeTab.url && (
+        {tab.url && (
           <React.Fragment>
             {TOOL_CONFIG.map((tool) => {
               const color =
                 tool.callback === currentTool && tab.isPanelVisible ? ACTIVE_TOOL_COLOR : ''
               const isRefresh = tool.callback === ToolCallback.onTabRefresh
+              const isDisabled = isRefresh && (!tab.loaded || tab.isRefreshing)
               return (
                 <div
-                  onClick={() => (isRefresh && !tab.loaded ? null : onTapTool(tool.callback))}
-                  className={cn(
-                    isRefresh && !tab.loaded ? 'cursor-not-allowed opacity-25' : 'cursor-pointer'
-                  )}
+                  onClick={() => (isDisabled ? null : onTapTool(tool.callback))}
+                  className={cn(isDisabled ? 'cursor-not-allowed opacity-25' : 'cursor-pointer')}
                   title={tool.label}
                   key={tool.callback}
                 >
@@ -43,4 +40,6 @@ export default function ToolBar(props: Props) {
     )
   }
   return <></>
-}
+})
+ToolBar.displayName = 'ToolBar'
+export default ToolBar

@@ -1,19 +1,26 @@
 /* eslint-disable react/prop-types */
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { FieldType, ProxyConfig, ProxyConfigSection } from './tabProxy.config'
 import { Button, Checkbox, Form, Input, Select, Space } from 'antd'
+import { IProxyTabConfig } from 'src/model/type'
+import _ from 'lodash'
+import { removeEmpty } from '@renderer/utils/util'
 
 interface Props {
+  config: IProxyTabConfig
   onCancel: () => void
+  onConfirm: (config: IProxyTabConfig, isManual?: boolean) => void
 }
-
-export default function TabProxy(props: Props) {
+const TabProxy: React.FC<Props> = React.memo((props: Props) => {
+  const { onCancel, onConfirm, config: configProps } = props
   const [form] = Form.useForm()
+  const [config, setConfig] = useState<IProxyTabConfig>()
   const onGenUserAgent = useCallback(
     async (key: string) => {
       const value = form.getFieldValue('system')
-      const ua = await window.api.genUserAgent(value)
-      form.setFieldValue(key, ua)
+      const agent = await window.api.genUserAgent(value)
+      form.setFieldValue(key, agent)
+      setConfig((prev = {} as IProxyTabConfig) => ({ ...prev, agent }))
     },
     [form]
   )
@@ -24,15 +31,23 @@ export default function TabProxy(props: Props) {
     [onGenUserAgent]
   )
   const onFinish = (values: any) => {
-    console.log(values)
+    const config = removeEmpty(values)
+    onConfirm(config, true)
   }
   useEffect(() => {
-    const agent = window.navigator.userAgent
-    form.setFieldsValue({ agent })
-    window.api.callAPI('https://ipwho.org/me').then((res) => {
-      console.log(res)
-    })
-  }, [form])
+    const initTab = async () => {
+      const _configProps = _.cloneDeep(configProps || {})
+      if (!_configProps.agent) _configProps.agent = window.navigator.userAgent
+      form.setFieldsValue(_configProps)
+      if (!_configProps.ip) {
+        const ipInfo = await window.api.getIPLocation()
+        Object.assign(_configProps, _.pick(ipInfo, ['ip', 'timezone', 'city', 'country']))
+      }
+      setConfig(_configProps)
+      if (!_.isEqual(_configProps, configProps)) onConfirm(_configProps)
+    }
+    initTab()
+  }, [configProps, form, onConfirm])
   const dynamicField = useCallback(
     (section: ProxyConfigSection) => {
       const options = ('options' in section && section.options) || null
@@ -74,7 +89,7 @@ export default function TabProxy(props: Props) {
   )
   return (
     <div className="flex flex-col w-full h-full overflow-hidden !p-2">
-      <div className="!font-semibold py-1 border-b-[1px] border-[#ccc]">代理设置</div>
+      <div className="!font-semibold py-1 border-b-[1px] border-[#d9d9d9]">代理设置</div>
       <div className="flex-1 py-1 overflow-scroll flex gap-4">
         <div className="flex-2">
           <Form
@@ -95,7 +110,7 @@ export default function TabProxy(props: Props) {
             ))}
             <Form.Item label={null}>
               <Space>
-                <Button onClick={props.onCancel} htmlType="button">
+                <Button onClick={onCancel} htmlType="button">
                   取消
                 </Button>
                 <Button type="primary" htmlType="submit">
@@ -106,9 +121,35 @@ export default function TabProxy(props: Props) {
           </Form>
         </div>
         <div className="flex-1">
-          <div className="!font-semibold py-1 border-b-[1px] border-[#ccc]">指纹预览</div>
+          <div className="!font-semibold py-1 border-b-[1px] border-[#d9d9d9]">指纹预览</div>
+          <div className="configs p-2 bg-[#d9d9d9] text-[14px] text-black/88">
+            <div className="flex items-start !mb-2">
+              <div className="w-24">User Agent</div>
+              <div className="flex-1 text-right">{config?.agent || '-'}</div>
+            </div>
+            <div className="flex items-start !mb-2">
+              <div className="w-24">时区</div>
+              <div className="flex-1 text-right">{config?.timezone || '-'}</div>
+            </div>
+            <div className="flex items-start !mb-2">
+              <div className="w-24">IP地址</div>
+              <div className="flex-1 text-right">{config?.ip || '-'}</div>
+            </div>
+            <div className="flex items-start !mb-2">
+              <div className="w-24">地理位置</div>
+              <div className="flex-1 text-right">
+                <>
+                  {config?.city}
+                  {config?.city ? '|' : ''}
+                </>
+                <>{config?.country || '-'}</>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )
-}
+})
+TabProxy.displayName = 'TabProxy'
+export default TabProxy

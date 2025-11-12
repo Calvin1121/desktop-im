@@ -1,7 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, MessageBoxOptions } from 'electron'
 import { TabMgr } from '../tab-mgr'
 import { SendMsgParams } from '../../model/type'
-import { FetchOptions } from '../fetcher'
 
 export async function exitAppMessageBox() {
   const exitAppOptions: MessageBoxOptions = {
@@ -21,9 +20,7 @@ export const initIpcMain = (app: Electron.App, mainWindow: BrowserWindow) => {
   const tabManager = new TabMgr(mainWindow)
 
   // new api
-  ipcMain.handle('callAPI', async (_, url: string, options?: FetchOptions) =>
-    tabManager.callAPI(url, options)
-  )
+  ipcMain.handle('getIPLocation', async () => tabManager.getIPLocation())
   ipcMain.handle('genUserAgent', async (_, system: string[]) => tabManager.genUserAgent(system))
   ipcMain.handle('refreshTab', (_, tabUuid) => tabManager.refreshTab(tabUuid))
   ipcMain.on('toggleTab', (_, tabUuid, status) => tabManager.toggleTab(tabUuid, status))

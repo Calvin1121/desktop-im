@@ -15,7 +15,6 @@ import toast, { Toaster } from 'react-hot-toast'
 export default function AppSelect() {
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string>()
-  const [currentTool, setCurrentTool] = useState<ToolCallback>()
   const barRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const isExceed = useMemo(() => tabs.length >= MAX_TAB, [tabs])
@@ -81,6 +80,10 @@ export default function AppSelect() {
   }
   const onSwitch = (item: Tab) => {
     if (item.uuid !== activeTabId) {
+      onUpdateTabs(activeTabId, (tab) => {
+        tab.isPanelVisible = false
+        tab.currentTool = undefined
+      })
       setActiveTabId(item.uuid)
       window.api.switchTab(item.uuid, getBounds())
     }
@@ -136,31 +139,50 @@ export default function AppSelect() {
       }
     })
   }
-
+  const onTogglePanel = (toolType) => {
+    if (ToolCallback.onSetTabProxy === toolType || !toolType) {
+      onUpdateTabs(activeTabId, (tab) => {
+        tab.isPanelVisible = !!toolType
+        window.api.toggleTab(tab.uuid, !tab.isPanelVisible)
+      })
+    }
+  }
+  const onUpdateTabsByToolbar = (toolType?: ToolCallback) => {
+    onUpdateTabs(activeTabId, (tab) => {
+      tab.currentTool = toolType
+      onTogglePanel(tab.currentTool)
+    })
+  }
   const onTapToolCallback = (callback: ToolCallback) => {
     if ([ToolCallback.onTabRefresh].includes(callback)) {
       onRefreshTab()
       return
     }
-    if (callback === ToolCallback.onTogglePanel && currentTool) {
-      setCurrentTool(undefined)
+    if (callback === ToolCallback.onTogglePanel && activeTab?.currentTool) {
+      onUpdateTabsByToolbar(undefined)
       return
     }
     const _callback =
-      callback === ToolCallback.onTogglePanel && !currentTool
+      callback === ToolCallback.onTogglePanel && !activeTab?.currentTool
         ? ToolCallback.onSetTabProxy
         : callback
-    setCurrentTool(_callback)
+    onUpdateTabsByToolbar(_callback)
   }
 
-  useEffect(() => {
-    if (ToolCallback.onSetTabProxy === currentTool || !currentTool) {
+  const onToolConfigConfirm = (
+    config: Record<string, any>,
+    toolType?: ToolCallback,
+    isManual?: boolean
+  ) => {
+    const isUpdate = !_.isEqual(config, _.get(activeTab?.configMap, toolType))
+    if (activeTab && toolType && isUpdate) {
       onUpdateTabs(activeTabId, (tab) => {
-        tab.isPanelVisible = !!currentTool
-        window.api.toggleTab(tab.uuid, !tab.isPanelVisible)
+        tab.configMap = tab.configMap ?? {}
+        _.set(tab.configMap, toolType, config)
       })
     }
-  }, [activeTabId, currentTool, onUpdateTabs])
+    if (isManual) onUpdateTabsByToolbar(undefined)
+  }
 
   return (
     <div className={styles.container}>
@@ -206,38 +228,29 @@ export default function AppSelect() {
         </div>
       </div>
       <div ref={containerRef} className={styles.viewContainer}>
-        {tabs.map((tab) => (
-          <React.Fragment key={tab.uuid}>
-            {tab.uuid === activeTabId && (
-              <>
-                {tab.loading && !tab.isPanelVisible && (
-                  <PuffLoader loading color="#000" size={50} />
-                )}
-                {!tab.loading && !tab.loaded && (
-                  <TabsSelect tab={tab} tabs={BASE_IM_LIST} onOpenUrl={onOpenUrl} />
-                )}
-                {tab.isPanelVisible && (
-                  <ToolPanel
-                    currentTool={currentTool}
-                    onCancel={() => onTapToolCallback(ToolCallback.onTogglePanel)}
-                  />
-                )}
-              </>
+        {/* {tabs.map((tab) => (
+          <React.Fragment key={tab.uuid}> */}
+        {activeTab && (
+          <>
+            {activeTab.loading && !activeTab.isPanelVisible && (
+              <PuffLoader loading color="#000" size={50} />
             )}
-          </React.Fragment>
-        ))}
+            {!activeTab.loading && !activeTab.loaded && (
+              <TabsSelect tab={activeTab} tabs={BASE_IM_LIST} onOpenUrl={onOpenUrl} />
+            )}
+            {activeTab.isPanelVisible && (
+              <ToolPanel
+                tab={activeTab}
+                onCancel={() => onTapToolCallback(ToolCallback.onTogglePanel)}
+                onConfirm={onToolConfigConfirm}
+              />
+            )}
+          </>
+        )}
+        {/* </React.Fragment>
+        ))} */}
       </div>
-      {tabs.map((tab) => (
-        <React.Fragment key={tab.uuid}>
-          <ToolBar
-            currentTool={currentTool}
-            tab={tab}
-            activeTab={activeTab}
-            onTapToolCallback={onTapToolCallback}
-          />
-        </React.Fragment>
-      ))}
-      {}
+      {activeTab && <ToolBar tab={activeTab} onTapToolCallback={onTapToolCallback} />}
     </div>
   )
 }

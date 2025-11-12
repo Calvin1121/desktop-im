@@ -6,7 +6,7 @@ import { LineWorksTab } from './line-works/tab'
 import { tabEventBus, TabEvents } from './event-bus'
 import { DefaultTab } from './default-tab/tab'
 import UserAgent from 'user-agents'
-import { FetchOptions, fetchWithRetry } from './fetcher'
+import ipapi from 'ipapi.co'
 
 export class TabMgr {
   private mainWindow: BrowserWindow
@@ -27,9 +27,15 @@ export class TabMgr {
       tab.isVisible = status
     }
   }
-  async callAPI(url: string, options?: FetchOptions) {
-    const [err, data] = await fetchWithRetry(url, { ...options, retryCount: 0 })
-    return { err, data }
+  async getIPLocation() {
+    return new Promise((resolve) => {
+      try {
+        // resolve({})
+        ipapi.location((res) => resolve(res))
+      } catch {
+        resolve({})
+      }
+    })
   }
   genUserAgent(system?: string[]) {
     try {
@@ -62,10 +68,10 @@ export class TabMgr {
   }
   switchTab(tabUuid: string, bounds: Electron.Rectangle): void {
     this.hideTabs()
-    const tab = this.tabs.get(tabUuid)
-    if (tab) {
-      tab.updateBounds(bounds)
-      tab.isVisible = true
+    const tabInstances = this.tabs.get(tabUuid)
+    if (tabInstances) {
+      tabInstances.updateBounds(bounds)
+      tabInstances.isVisible = true
     }
   }
   onGenerateTab(tab: Tab) {

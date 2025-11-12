@@ -1,11 +1,24 @@
+import React, { useMemo } from 'react'
 import { ToolCallback } from './index.constant'
 import TabProxy from './tabProxy'
+import _ from 'lodash'
 
 interface Props {
-  currentTool?: ToolCallback
+  tab: Tab
   onCancel: () => void
+  onConfirm: (config: Record<string, any>, currentTool?: ToolCallback, isManual?: boolean) => void
 }
-export default function ToolPanel(props: Props) {
-  const { currentTool } = props
-  return <TabProxy onCancel={props.onCancel} />
-}
+const ToolPanel: React.FC<Props> = React.memo((props: Props) => {
+  const { tab, onConfirm, onCancel } = props
+  const currentTool = useMemo(() => tab.currentTool as ToolCallback, [tab.currentTool])
+  const configMap = useMemo(() => tab.configMap ?? {}, [tab.configMap])
+  return (
+    <TabProxy
+      config={_.get(configMap, ToolCallback.onSetTabProxy)}
+      onConfirm={(config, isManual) => onConfirm(config, currentTool, isManual)}
+      onCancel={onCancel}
+    />
+  )
+})
+ToolPanel.displayName = 'ToolPanel'
+export default ToolPanel

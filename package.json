@@ -30,6 +30,7 @@
     "antd": "^5.28.0",
     "clsx": "^2.1.1",
     "electron-updater": "^6.3.9",
+    "ipapi.co": "^0.3.0",
     "lodash": "^4.17.21",
     "postcss": "^8.5.4",
     "react-hot-toast": "^2.6.0",
