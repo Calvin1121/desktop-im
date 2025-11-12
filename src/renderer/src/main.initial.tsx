@@ -2,9 +2,18 @@ import toast, { Toaster } from 'react-hot-toast'
 import { useMainStates } from './main.provider'
 import { useEffect, useMemo } from 'react'
 import _ from 'lodash'
+import { SocketEvent, useAppSocket } from './main.socket'
 
 export const InitialMain = () => {
-  const { states, onToast } = useMainStates()
+  const { states, onToast, updateStates } = useMainStates()
+  const { on, off } = useAppSocket()
+  useEffect(() => {
+    on(SocketEvent.LoginInfo, (data) => {
+      updateStates((prev) => ({ ...prev, loginInfo: { ...prev.loginInfo, ...data } }))
+    })
+    return () => off(SocketEvent.LoginInfo)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [on, off])
   const statesToast = useMemo(() => states.toast, [states.toast])
   useEffect(() => {
     if (statesToast?.callback) {

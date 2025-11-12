@@ -13,12 +13,13 @@ import { ToolCallback } from './index.constant'
 import { useMainStates } from '@renderer/main.provider'
 
 export default function AppSelect() {
-  const { onToast } = useMainStates()
+  const { onToast, states } = useMainStates()
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string>()
   const barRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const isExceed = useMemo(() => tabs.length >= MAX_TAB, [tabs])
+  const maxTab = useMemo(() => states.loginInfo?.tabCount || MAX_TAB, [states.loginInfo?.tabCount])
+  const isExceed = useMemo(() => tabs.length >= maxTab, [maxTab, tabs.length])
 
   const activeTab = useMemo(
     () => tabs.find((item) => item.uuid === activeTabId),

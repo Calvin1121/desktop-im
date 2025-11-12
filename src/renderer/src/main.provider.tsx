@@ -8,9 +8,14 @@ interface IToast {
   error?: string
 }
 
+interface LoginInfo {
+  token: string
+  tabCount: number
+}
+
 interface IMainContextState {
   isSkipLogin: boolean
-  loginInfo?: Record<string, any>
+  loginInfo?: LoginInfo
   toast?: IToast
 }
 
@@ -21,7 +26,7 @@ interface IMainContext {
   updateStates: (inStates: InStates) => void
 }
 const States: IMainContextState = {
-  isSkipLogin: true
+  isSkipLogin: false
 }
 
 export const MainContext = createContext<IMainContext>({
@@ -40,7 +45,7 @@ export function MainProvider({ children }: { children: ReactNode }) {
 export function useMainStates() {
   const { states, updateStates } = useContext(MainContext)
   const onToast = useCallback((toast?: IToast) => updateStates({ toast }), [updateStates])
-  const isLoged = useMemo(() => !!states.loginInfo, [states])
+  const isLoged = useMemo(() => !!states.loginInfo?.token, [states])
   const isSkipLogin = useMemo(() => states.isSkipLogin, [states.isSkipLogin])
   return { isLoged, isSkipLogin, states, updateStates, onToast }
 }

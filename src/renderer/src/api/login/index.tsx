@@ -6,7 +6,7 @@ export const useLogin = () => {
     'login',
     async (url: string, { arg: { code } }: { arg: { code: string } }) => {
       return new Promise((resolve) => {
-        _.delay(() => resolve({ url, code }), 2000)
+        _.delay(() => resolve({ token: '12315', tabCount: 3 }), 2000)
       })
     }
   )

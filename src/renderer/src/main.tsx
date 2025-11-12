@@ -7,6 +7,7 @@ import { routeTree } from './routeTree.gen'
 import { MainProvider } from './main.provider'
 import { InitialMain } from './main.initial'
 import { ConfigSWR } from './main.swr'
+import { SocketProvider } from './main.socket'
 
 // Create a new router instance
 const router = createRouter({
@@ -24,11 +25,13 @@ declare module '@tanstack/react-router' {
 }
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ConfigSWR>
-      <MainProvider>
-        <InitialMain />
-        <RouterProvider router={router} />
-      </MainProvider>
-    </ConfigSWR>
+    <MainProvider>
+      <ConfigSWR>
+        <SocketProvider>
+          <InitialMain />
+          <RouterProvider router={router} />
+        </SocketProvider>
+      </ConfigSWR>
+    </MainProvider>
   </StrictMode>
 )
