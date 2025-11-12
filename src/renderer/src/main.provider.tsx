@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import { ReactNode } from '@tanstack/react-router'
-import { createContext, useCallback, useContext, useState } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react'
 
-interface IMainContextState {}
+interface IMainContextState {
+  loginInfo?: Record<string, any>
+}
 
 type InStates = Partial<IMainContextState> | ((states: IMainContextState) => IMainContextState)
 
@@ -10,7 +11,9 @@ interface IMainContext {
   states: IMainContextState
   updateStates: (inStates: InStates) => void
 }
-const States: IMainContextState = {}
+const States: IMainContextState = {
+  loginInfo: undefined
+}
 
 export const MainContext = createContext<IMainContext>({
   states: States,
@@ -27,5 +30,8 @@ export function MainProvider({ children }: { children: ReactNode }) {
 }
 export function useMainStates() {
   const { states, updateStates } = useContext(MainContext)
-  return { states, updateStates }
+  console.log(states)
+  const isLoged = useMemo(() => !!states.loginInfo, [states])
+  console.log(isLoged)
+  return { isLoged, states, updateStates }
 }

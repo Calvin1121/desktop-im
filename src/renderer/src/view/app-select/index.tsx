@@ -80,6 +80,7 @@ export default function AppSelect() {
   }
   const onSwitch = (item: Tab) => {
     if (item.uuid !== activeTabId) {
+      console.log(activeTabId)
       onUpdateTabs(activeTabId, (tab) => {
         tab.isPanelVisible = false
         tab.currentTool = undefined
@@ -199,8 +200,8 @@ export default function AppSelect() {
             const displayName = IMName && userName ? `${IMName}-${userName}` : IMName || '标签页'
             return (
               <div
-                data-userId={item.user?.userId ?? 'unlogin'}
-                data-tabId={item.uuid}
+                data-userid={item.user?.userId ?? 'unlogin'}
+                data-tabid={item.uuid}
                 title={displayName}
                 onClick={() => onSwitch(item)}
                 className={cn(
