@@ -1,6 +1,6 @@
 import { BrowserView } from 'electron'
 import { join } from 'path'
-import type { Bounds, SendMsgParams, Tab, TabUser } from '../model/type'
+import type { Bounds, Tab, TabUser } from '../model/type'
 import { tabEventBus, TabEvents } from './event-bus'
 import { Worker } from 'node:worker_threads'
 import creatWorker from './workers/wss-worker?nodeWorker'
@@ -97,7 +97,7 @@ export abstract class TabInstance {
     }
   }
 
-  sendMessage(params: SendMsgParams): void {
+  sendMessage(params: any): void {
     this.onSendMessage(params)
   }
   async setUserStatus(isOnline: boolean) {
@@ -114,6 +114,9 @@ export abstract class TabInstance {
   }
   updateTabUser(tabUser: TabUser) {
     tabEventBus.emit(TabEvents.TabUser, tabUser, this.tab.uuid)
+  }
+  emitMsgFromMainToRender(channel, payload) {
+    tabEventBus.emit(TabEvents.ForwardMsg, channel, payload)
   }
   protected initWssWorker() {
     if (!this.wssWorker) {

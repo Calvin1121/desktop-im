@@ -1,6 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, MessageBoxOptions } from 'electron'
 import { TabMgr } from '../tab-mgr'
-import { SendMsgParams } from '../../model/type'
 
 export async function exitAppMessageBox() {
   const exitAppOptions: MessageBoxOptions = {
@@ -41,6 +40,8 @@ export const initIpcMain = (app: Electron.App, mainWindow: BrowserWindow) => {
       return app.quit()
     } else return isExit
   })
-  ipcMain.handle('sendMsg', (_, params: SendMsgParams) => tabManager.onSendMsg(params))
+  ipcMain.on('msgFromRenderToMain', (_, channel, payload) =>
+    tabManager.msgFromRenderToMain(channel, payload)
+  )
   // new api
 }

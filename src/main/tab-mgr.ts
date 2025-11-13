@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { Bounds, SendMsgParams, Tab, TabUser } from '../model/type'
+import { Bounds, Tab, TabUser } from '../model/type'
 import { TabInstance } from './base-tab'
 import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
@@ -7,6 +7,7 @@ import { tabEventBus, TabEvents } from './event-bus'
 import { DefaultTab } from './default-tab/tab'
 import UserAgent from 'user-agents'
 import ipapi from 'ipapi.co'
+import { SocketEvent } from '../model/common.constant'
 
 export class TabMgr {
   private mainWindow: BrowserWindow
@@ -16,6 +17,7 @@ export class TabMgr {
     this.mainWindow = mainWindow
     this.onUpdateTabUser()
     this.onNotifyClicked()
+    this.onEmitMsgFromMainToRender()
   }
 
   get tabInstances(): Map<string, TabInstance> {
@@ -120,17 +122,24 @@ export class TabMgr {
       this.mainWindow.webContents.send('onTabUser', tabUser, tabUuid)
     })
   }
+  onEmitMsgFromMainToRender() {
+    tabEventBus.on(TabEvents.ForwardMsg, (channel, payload) => {
+      this.mainWindow.webContents.send('msgFromMainToRender', channel, payload)
+    })
+  }
   onNotifyClicked() {
     tabEventBus.on(TabEvents.NotifyClicked, (tabUuid) => {
       this.mainWindow.webContents.send('onTabSwitched', tabUuid)
     })
   }
-  onSendMsg(params: SendMsgParams) {
-    const { userId, from: tabType } = params
-    for (const [_, tab] of this.tabs) {
-      if (tab.getUserId() === userId && tab.getTabType() === tabType) {
-        tab?.sendMessage?.(params)
-        break
+  msgFromRenderToMain(channel, payload) {
+    if (channel === SocketEvent.SendMessage) {
+      const { userId, from: tabType } = payload
+      for (const [_, tab] of this.tabs) {
+        if (tab.getUserId() === userId && tab.getTabType() === tabType) {
+          tab?.sendMessage?.(payload)
+          break
+        }
       }
     }
   }

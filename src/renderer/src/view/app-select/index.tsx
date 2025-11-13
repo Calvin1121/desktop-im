@@ -33,17 +33,6 @@ export default function AppSelect() {
       })
     )
   }, [])
-  useEffect(() => {
-    const onSendMsgCallback = (event) => {
-      const params = event.detail
-      console.log(params)
-      window.api.sendMsg(params)
-    }
-    window.addEventListener('sendMsg', onSendMsgCallback)
-    return () => {
-      window.removeEventListener('sendMsg', onSendMsgCallback)
-    }
-  }, [])
 
   const isInit = useRef(false)
   const getBounds = () => {

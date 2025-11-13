@@ -16,6 +16,18 @@ export const DEFAULT_MENUS: Array<MenuItemConstructorOptions | MenuItem> = [
       { role: 'toggleDevTools', label: '开发工具' },
       { role: 'togglefullscreen', label: '切换全屏' }
     ]
+  },
+  {
+    label: '操作',
+    submenu: [
+      { role: 'undo', label: '撤销' },
+      { role: 'redo', label: '恢复' },
+      { type: 'separator' },
+      { role: 'cut', label: '剪切' },
+      { role: 'copy', label: '复制' },
+      { role: 'paste', label: '粘贴' },
+      { role: 'selectAll', label: '全选' }
+    ]
   }
 ]
 

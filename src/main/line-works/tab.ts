@@ -4,7 +4,6 @@ import { SendMsgParams, Tab } from '../../model/type'
 import { FetchOptions, fetchWithRetry } from '../fetcher'
 import { TabInstance } from '../base-tab'
 import _ from 'lodash'
-import { apis, baseUrl } from '../../api'
 import { tabEventBus, TabEvents } from '../event-bus'
 import { findChangedKey, findUrlInfo, mergeUnique, parseJsonString } from '../utils'
 import {
@@ -18,6 +17,7 @@ import {
 } from './constance'
 import { HTTP_STATUS_CODE } from '../../model/api.constant'
 import { genContentMsg, genHeaders, genMediaMsg, getMessageType } from './utils'
+import { SocketEvent } from '../../model/common.constant'
 
 type URLS_MAP_TYPE = typeof URLS_MAP
 
@@ -84,12 +84,6 @@ export class LineWorksTab extends TabInstance {
       }
     }
   }
-  private async onForwardData(params) {
-    const url = `${baseUrl}${apis.webhookLinework}`
-    const payload = { wssPayload: params }
-    const options = { body: JSON.stringify(payload), method: 'POST' }
-    this.workerRequest({ url, options })
-  }
   private requestWillBeSent(params: any) {
     const { request } = params
     const { key: apiKey } = findUrlInfo<URLS_MAP_TYPE>(request.url, URLS_MAP)
@@ -146,7 +140,12 @@ export class LineWorksTab extends TabInstance {
             const onClick = () => tabEventBus.emit(TabEvents.NotifyClicked, this.uuid, this.bounds)
             this.onNotify(notify, onClick)
           }
-          this.onForwardData(item)
+          const payload = {
+            tabId: this.uuid,
+            userId: this.userId,
+            data: item
+          }
+          this.emitMsgFromMainToRender(SocketEvent.ForwardMessage, payload)
         }
       }
     }
@@ -164,13 +163,23 @@ export class LineWorksTab extends TabInstance {
         if (!err && channeldata?.code === HTTP_STATUS_CODE.Success) {
           const mergedList = _.flatMap(_.get(channeldata, 'result'), 'channelList')
           const uniqueList = _.uniqBy(mergedList, 'channelNo')
-          this.onForwardData(uniqueList)
+          const payload = {
+            userList: uniqueList,
+            tabId: this.uuid,
+            userId: this.userId
+          }
+          this.emitMsgFromMainToRender(SocketEvent.UpdateUserList, payload)
         }
       }
     }
   }
   protected async onUserStatus(isOnline: boolean) {
-    console.log(isOnline)
+    const payload = {
+      ...this.userInfo,
+      tabId: this.uuid,
+      isOnline: !!isOnline
+    }
+    this.emitMsgFromMainToRender(SocketEvent.UpdateUserStatus, payload)
   }
   private async onSendMsgFunc(url, payload) {
     const body = JSON.stringify(payload)

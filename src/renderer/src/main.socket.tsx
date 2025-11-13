@@ -12,7 +12,8 @@ import { io, Socket } from 'socket.io-client'
 import { useMainStates } from './main.provider'
 
 export enum SocketEvent {
-  LoginInfo = 'loginInfo'
+  LoginInfo = 'loginInfo',
+  SendMessage = 'sendMessage'
 }
 
 const SOCKET_URL = 'ws://localhost:4000'
