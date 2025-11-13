@@ -100,12 +100,16 @@ export class TabMgr {
       })
   }
   closeTab(tabUuid: string): void {
-    const instance = this.tabs.get(tabUuid)
-    if (!instance) return
-    this.mainWindow.removeBrowserView(instance.getView())
-    instance.destroy()
-    instance.setUserStatus(false)
-    this.tabs.delete(tabUuid)
+    try {
+      const instance = this.tabs.get(tabUuid)
+      if (!instance) return
+      this.mainWindow?.removeBrowserView?.(instance.getView())
+      instance?.destroy?.()
+      instance?.setUserStatus?.(false)
+      this.tabs.delete(tabUuid)
+    } catch (error) {
+      console.error(error)
+    }
   }
   resizeTab(tabUuid: string, bounds: Electron.Rectangle): void {
     const instance = this.tabs.get(tabUuid)

@@ -1,17 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react'
-
-interface IToast {
-  callback?: Promise<any> | (() => any)
-  loading?: string
-  success?: string
-  error?: string
-}
-
-interface LoginInfo {
-  token: string
-  tabCount: number
-}
+import { IToast, LoginInfo } from 'src/model/type'
 
 interface IMainContextState {
   isSkipLogin: boolean

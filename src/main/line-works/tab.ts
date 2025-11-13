@@ -16,7 +16,7 @@ import {
   userOptionsParams,
   cookieKeys
 } from './constance'
-import { HTTP_STATUS_CODE } from '../../model/api.constance'
+import { HTTP_STATUS_CODE } from '../../model/api.constant'
 import { genContentMsg, genHeaders, genMediaMsg, getMessageType } from './utils'
 
 type URLS_MAP_TYPE = typeof URLS_MAP

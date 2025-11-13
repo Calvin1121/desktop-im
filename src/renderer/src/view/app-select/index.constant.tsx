@@ -1,6 +1,6 @@
 import { IconAdjustment, IconProxy, IconShuaxin } from "@renderer/components/iconfont"
 
-export enum ToolCallback {
+export enum ToolType {
   onTogglePanel = 'onTogglePanel',
   onSetTabProxy = 'onSetTabProxy',
   onTabRefresh = 'onTabRefresh'
@@ -9,17 +9,17 @@ export const TOOL_CONFIG = [
   {
     icon: (color: string) => <IconAdjustment size={16} color={color} />,
     label: '伸缩',
-    callback: ToolCallback.onTogglePanel
+    callback: ToolType.onTogglePanel
   },
   {
     icon: (color: string) => <IconProxy size={16} color={color} />,
     label: '代理',
-    callback: ToolCallback.onSetTabProxy
+    callback: ToolType.onSetTabProxy
   },
   {
     icon: <IconShuaxin size={16} />,
     label: '刷新',
-    callback: ToolCallback.onTabRefresh
+    callback: ToolType.onTabRefresh
   }
 ]
 

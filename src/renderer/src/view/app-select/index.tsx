@@ -9,7 +9,7 @@ import cn from '@renderer/utils/classname'
 import TabsSelect from './tabsSelect'
 import ToolBar from './index.toolbar'
 import ToolPanel from './index.toolpanel'
-import { ToolCallback } from './index.constant'
+import { ToolType } from './index.constant'
 import { useMainStates } from '@renderer/main.provider'
 
 export default function AppSelect() {
@@ -85,7 +85,7 @@ export default function AppSelect() {
       console.log(activeTabId)
       onUpdateTabs(activeTabId, (tab) => {
         tab.isPanelVisible = false
-        tab.currentTool = undefined
+        tab.toolType = undefined
       })
       setActiveTabId(item.uuid)
       window.api.switchTab(item.uuid, getBounds())
@@ -139,38 +139,38 @@ export default function AppSelect() {
     })
   }
   const onTogglePanel = (toolType) => {
-    if (ToolCallback.onSetTabProxy === toolType || !toolType) {
+    if (ToolType.onSetTabProxy === toolType || !toolType) {
       onUpdateTabs(activeTabId, (tab) => {
         tab.isPanelVisible = !!toolType
         window.api.toggleTab(tab.uuid, !tab.isPanelVisible)
       })
     }
   }
-  const onUpdateTabsByToolbar = (toolType?: ToolCallback) => {
+  const onUpdateTabsByToolbar = (toolType?: ToolType) => {
     onUpdateTabs(activeTabId, (tab) => {
-      tab.currentTool = toolType
-      onTogglePanel(tab.currentTool)
+      tab.toolType = toolType
+      onTogglePanel(tab.toolType)
     })
   }
-  const onTapToolCallback = (callback: ToolCallback) => {
-    if ([ToolCallback.onTabRefresh].includes(callback)) {
+  const onTapToolCallback = (toolType: ToolType) => {
+    if ([ToolType.onTabRefresh].includes(toolType)) {
       onRefreshTab()
       return
     }
-    if (callback === ToolCallback.onTogglePanel && activeTab?.currentTool) {
+    if (toolType === ToolType.onTogglePanel && activeTab?.toolType) {
       onUpdateTabsByToolbar(undefined)
       return
     }
-    const _callback =
-      callback === ToolCallback.onTogglePanel && !activeTab?.currentTool
-        ? ToolCallback.onSetTabProxy
-        : callback
-    onUpdateTabsByToolbar(_callback)
+    const _toolType =
+      toolType === ToolType.onTogglePanel && !activeTab?.toolType
+        ? ToolType.onSetTabProxy
+        : toolType
+    onUpdateTabsByToolbar(_toolType)
   }
 
   const onToolConfigConfirm = (
     config: Record<string, any>,
-    toolType?: ToolCallback,
+    toolType?: ToolType,
     isManual?: boolean
   ) => {
     const isUpdate = !_.isEqual(config, _.get(activeTab?.configMap, toolType))
@@ -235,7 +235,7 @@ export default function AppSelect() {
             {activeTab.isPanelVisible && (
               <ToolPanel
                 tab={activeTab}
-                onCancel={() => onTapToolCallback(ToolCallback.onTogglePanel)}
+                onCancel={() => onTapToolCallback(ToolType.onTogglePanel)}
                 onConfirm={onToolConfigConfirm}
               />
             )}

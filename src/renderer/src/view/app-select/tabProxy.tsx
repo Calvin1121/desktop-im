@@ -79,7 +79,7 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
   const dynamicFormItem = useCallback(
     (section) => {
       const { key, label } = section
-      const props = { key, name: key, label }
+      const props = { name: key, label }
       if (section.type === FieldType.Checkbox && !section.options) {
         Object.assign(props, { valuePropName: 'checked' })
       }
@@ -104,7 +104,11 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
               <React.Fragment key={item.key}>
                 <section>
                   <div className="!font-semibold !mb-2">{item.sectionName}</div>
-                  <main>{item.sections.map((section) => dynamicFormItem(section))}</main>
+                  <main>
+                    {item.sections.map((section) => (
+                      <React.Fragment key={section.key}>{dynamicFormItem(section)}</React.Fragment>
+                    ))}
+                  </main>
                 </section>
               </React.Fragment>
             ))}

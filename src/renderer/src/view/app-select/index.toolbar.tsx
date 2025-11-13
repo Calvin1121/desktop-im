@@ -1,16 +1,16 @@
 import cn from '@renderer/utils/classname'
 import styles from './index.module.scss'
 import React, { useMemo } from 'react'
-import { ACTIVE_TOOL_COLOR, TOOL_CONFIG, ToolCallback } from './index.constant'
+import { ACTIVE_TOOL_COLOR, TOOL_CONFIG, ToolType } from './index.constant'
 
 interface Props {
   tab: Tab
-  onTapToolCallback: (callback: ToolCallback) => void
+  onTapToolCallback: (callback: ToolType) => void
 }
 const ToolBar: React.FC<Props> = React.memo((props: Props) => {
   const { tab, onTapToolCallback } = props
-  const currentTool = useMemo(() => tab.currentTool, [tab.currentTool])
-  const onTapTool = (callback: ToolCallback) => {
+  const toolType = useMemo(() => tab.toolType, [tab.toolType])
+  const onTapTool = (callback: ToolType) => {
     onTapToolCallback(callback)
   }
   if (tab?.uuid) {
@@ -20,8 +20,8 @@ const ToolBar: React.FC<Props> = React.memo((props: Props) => {
           <React.Fragment>
             {TOOL_CONFIG.map((tool) => {
               const color =
-                tool.callback === currentTool && tab.isPanelVisible ? ACTIVE_TOOL_COLOR : ''
-              const isRefresh = tool.callback === ToolCallback.onTabRefresh
+                tool.callback === toolType && tab.isPanelVisible ? ACTIVE_TOOL_COLOR : ''
+              const isRefresh = tool.callback === ToolType.onTabRefresh
               const isDisabled = isRefresh && (!tab.loaded || tab.isRefreshing)
               return (
                 <div

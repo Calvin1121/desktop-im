@@ -12,7 +12,7 @@ export interface Tab {
   loaded?: boolean
   isPanelVisible?: boolean
   isRefreshing?: boolean
-  currentTool?: string
+  toolType?: string
   configMap?: Record<string, any>
 }
 export interface Bounds {
@@ -82,4 +82,16 @@ export interface SendMsgParams {
   filename?: string
   filesize?: string
   channelType?: number
+}
+
+export interface IToast {
+  callback?: Promise<any> | (() => any)
+  loading?: string
+  success?: string
+  error?: string
+}
+
+export interface LoginInfo {
+  token: string
+  tabCount: number
 }

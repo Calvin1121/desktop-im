@@ -71,11 +71,11 @@ export abstract class TabInstance {
     this.wssWorker = null
     const view = this.view as any
     const webContents = view.webContents
-    if (webContents.debugger.isAttached()) {
+    if (webContents?.debugger?.isAttached?.()) {
       webContents.debugger.off('message', this.debuggerMessageHandler)
       webContents.debugger.detach()
     }
-    webContents.destroy()
+    webContents?.destroy?.()
     view.destroy?.()
     this.view = null as any
   }
