@@ -71,11 +71,11 @@ export default function AppSelect() {
   }
   const onSwitch = (item: Tab) => {
     if (item.uuid !== activeTabId) {
-      console.log(activeTabId)
-      onUpdateTabs(activeTabId, (tab) => {
-        tab.isPanelVisible = false
-        tab.toolType = undefined
-      })
+      setTabs((prev) =>
+        prev.map((tab) =>
+          tab.uuid === activeTabId ? { ...tab, isPanelVisible: false, toolType: undefined } : tab
+        )
+      )
       setActiveTabId(item.uuid)
       window.api.switchTab(item.uuid, getBounds())
     }
@@ -84,27 +84,28 @@ export default function AppSelect() {
     if (!isInit.current) onAddTab()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const onOpenUrl = useCallback(
-    (item: Tab) => {
-      const bounds = getBounds()
-      setActiveTabId(item.uuid)
-      onUpdateTabs(item.uuid, (tab) => Object.assign(tab, { ...item, loading: true }))
-      window.api.openUrl(item, bounds)
-    },
-    [onUpdateTabs]
-  )
-  useEffect(() => {
-    window.api.onTabLoaded((uuid) =>
-      onUpdateTabs(uuid, (tab) => Object.assign(tab, { loading: false, loaded: true }))
+  const onOpenUrl = useCallback((item: Tab) => {
+    const bounds = getBounds()
+    setActiveTabId(item.uuid)
+    setTabs((prev) =>
+      prev.map((tab) => (tab.uuid === item.uuid ? { ...tab, ...item, loading: true } : tab))
     )
+    window.api.openUrl(item, bounds)
+  }, [])
+  useEffect(() => {
+    window.api.onTabLoaded((uuid) => {
+      setTabs((prev) =>
+        prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: false, loaded: true } : tab))
+      )
+    })
     window.api.onTabUser((user, uuid) => {
-      onUpdateTabs(uuid, (tab) => Object.assign(tab, user))
+      setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, user } : tab)))
     })
     window.api.onTabSwitched((uuid) => {
       setActiveTabId(uuid)
       window.api.switchTab(uuid, getBounds())
     })
-  }, [onUpdateTabs])
+  }, [])
   useEffect(() => {
     const onResize = _.debounce(() => {
       activeTabId && window.api.resize(activeTabId, getBounds())

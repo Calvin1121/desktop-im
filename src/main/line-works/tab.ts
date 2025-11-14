@@ -106,14 +106,17 @@ export class LineWorksTab extends TabInstance {
     const { url, options } = await this.generateRequestArguments(request)
     const [err, data] = await fetchWithRetry(url, options)
     if (data && !err) {
-      this.userInfo = _.merge(this.userInfo, data)
-      const {
-        contactNo,
-        name: { displayName: userName }
-      } = this.userInfo
-      const userId = (this.userId = String(contactNo || ''))
-      this.updateTabUser({ userId, userName, from: IM_TYPE.LineWorks })
-      this.onUserStatus(true)
+      const compareKeys = ['name', 'photos', 'emails', 'telephones', 'groups', 'organization']
+      if (!_.isEqual(_.pick(data, compareKeys), _.pick(this.userInfo, compareKeys))) {
+        this.userInfo = _.merge(this.userInfo, data)
+        const {
+          contactNo,
+          name: { displayName: userName }
+        } = this.userInfo
+        const userId = (this.userId = String(contactNo || ''))
+        this.updateTabUser({ userId, userName, from: IM_TYPE.LineWorks })
+        this.onUserStatus(true)
+      }
     }
   }
   private async syncUserChannelList(request: any) {

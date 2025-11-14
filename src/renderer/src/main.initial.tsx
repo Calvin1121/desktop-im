@@ -1,48 +1,41 @@
-import toast, { Toaster } from 'react-hot-toast'
 import { useMainStates } from './main.provider'
-import { useEffect, useMemo } from 'react'
-import _ from 'lodash'
-import { SocketEvent, useAppSocket } from './main.socket'
-import { useUnmount } from 'react-use'
+import React, { useEffect, useMemo } from 'react'
+import { SocketEvent, socketManager } from './utils/socket'
 
-export const InitialMain = () => {
-  const { states, onToast, updateStates } = useMainStates()
-  const { on, off, emit } = useAppSocket()
+const InitialMain: React.FC = React.memo(() => {
+  const { states, updateStates } = useMainStates()
+  const token = useMemo(() => states.loginInfo?.token, [states.loginInfo?.token])
   useEffect(() => {
-    on(SocketEvent.LoginInfo, (data) => {
+    if (token) {
+      socketManager.init(token)
+    }
+  }, [token])
+  useEffect(() => {
+    const callback = (data) =>
       updateStates((prev) => ({ ...prev, loginInfo: { ...prev.loginInfo, ...data } }))
-    })
-    on(SocketEvent.SendMessage, (payload) => {
+    socketManager.on(SocketEvent.LoginInfo, callback)
+    return () => {
+      socketManager.off(SocketEvent.LoginInfo, callback)
+    }
+  }, [])
+  useEffect(() => {
+    const callback = (payload) => {
       console.log(payload)
       window.api.msgFromRenderToMain(SocketEvent.SendMessage, payload)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [on])
-  useUnmount(() => {
-    off(SocketEvent.LoginInfo)
-    off(SocketEvent.SendMessage)
-  })
+    }
+    socketManager.on(SocketEvent.SendMessage, callback)
+    return () => {
+      socketManager.off(SocketEvent.SendMessage, callback)
+    }
+  }, [])
   useEffect(() => {
     window.api.msgFromMainToRender((channel: SocketEvent, payload) => {
       console.log(channel, payload)
-      emit(channel, payload)
+      socketManager.emit(channel, payload)
     })
-  }, [emit])
-  const statesToast = useMemo(() => states.toast, [states.toast])
-  useEffect(() => {
-    if (statesToast?.callback) {
-      const props = _.pick(statesToast, ['loading', 'success', 'error'])
-      toast.promise(statesToast?.callback, props)
-    }
-    onToast(undefined)
-  }, [onToast, statesToast])
-  return (
-    <>
-      <Toaster
-        position="top-center"
-        toastOptions={{ style: { lineHeight: 1.2, padding: '0 10px', fontSize: '14px' } }}
-        containerClassName="!inset-[6px]"
-      />
-    </>
-  )
-}
+  }, [])
+  return <></>
+})
+InitialMain.displayName = 'InitialMain'
+
+export default InitialMain

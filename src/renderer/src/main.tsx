@@ -5,9 +5,10 @@ import { createRoot } from 'react-dom/client'
 import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
 import { MainProvider } from './main.provider'
-import { InitialMain } from './main.initial'
 import { ConfigSWR } from './main.swr'
 import { SocketProvider } from './main.socket'
+import InitialMain from './main.initial'
+import GlobalToast from './main.toast'
 
 // Create a new router instance
 const router = createRouter({
@@ -27,10 +28,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MainProvider>
       <ConfigSWR>
-        <SocketProvider>
-          <InitialMain />
-          <RouterProvider router={router} />
-        </SocketProvider>
+        <InitialMain />
+        <GlobalToast />
+        <RouterProvider router={router} />
       </ConfigSWR>
     </MainProvider>
   </StrictMode>
