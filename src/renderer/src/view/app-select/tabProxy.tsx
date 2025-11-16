@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
-import React, { useCallback, useEffect, useState } from 'react'
-import { FieldType, ProxyConfig, ProxyConfigSection } from './tabProxy.config'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FieldType, ProxyConfig, ProxyConfigSection, ProxyConfigType } from './tabProxy.config'
 import { Button, Checkbox, Form, Input, Select, Space } from 'antd'
 import { IProxyTabConfig } from 'src/model/type'
 import _ from 'lodash'
@@ -12,7 +12,14 @@ interface Props {
   onConfirm: (config: IProxyTabConfig, isManual?: boolean) => void
 }
 const TabProxy: React.FC<Props> = React.memo((props: Props) => {
+  const isGotIpRef = useRef(false)
   const { onCancel, onConfirm, config: configProps } = props
+  const [configs, setConfigs] = useState<ProxyConfigType>(ProxyConfig)
+  const [defaultIpConfig, setDefaultIpConfig] = useState<Partial<IProxyTabConfig>>()
+  const IpConfig = useMemo(
+    () => (configProps?.ip ? configProps : defaultIpConfig),
+    [configProps, defaultIpConfig]
+  )
   const [form] = Form.useForm()
   const [config, setConfig] = useState<IProxyTabConfig>()
   const onGenUserAgent = useCallback(
@@ -39,21 +46,54 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
       const _configProps = _.cloneDeep(configProps || {})
       if (!_configProps.agent) _configProps.agent = window.navigator.userAgent
       form.setFieldsValue(_configProps)
-      if (!_configProps.ip) {
-        const ipInfo = await window.api.getIPLocation()
-        Object.assign(_configProps, _.pick(ipInfo, ['ip', 'timezone', 'city', 'country']))
-      }
       setConfig(_configProps)
       if (!_.isEqual(_configProps, configProps)) onConfirm(_configProps)
     }
     initTab()
   }, [configProps, form, onConfirm])
+  const getIPLocation = async (ip?: string, port?: string) => {
+    if (isGotIpRef.current) return
+    isGotIpRef.current = true
+    const ipInfo = await window.api.getIPLocation(ip, port)
+    const ipConfig = _.pick(ipInfo, ['ip', 'timezone', 'city', 'country'])
+    isGotIpRef.current = false
+    if (ip && port) {
+      setConfig((prev) => ({ ...prev, ...ipConfig }))
+    } else {
+      setDefaultIpConfig(ipConfig)
+    }
+  }
+  useEffect(() => {
+    if (!configProps?.ip && !defaultIpConfig) getIPLocation()
+  }, [configProps?.ip, defaultIpConfig])
+  useEffect(() => {
+    if (configProps?.ip && configProps?.port) getIPLocation(configProps.ip, configProps.port)
+  }, [configProps?.ip, configProps?.port])
+  const onFieldsChange = (changedFields) => {
+    const field = changedFields[0]
+    const fieldName = field?.name?.[0]
+    const filedValue = field?.value
+    // form.setFieldValue(fieldName, filedValue)
+    const _configs = configs.map((config) => {
+      const { sections, ...rest } = config
+      return {
+        ...rest,
+        sections: sections.map((section) => {
+          if (section.key === fieldName) section.value = filedValue
+          return section
+        })
+      }
+    })
+    setConfigs(_configs as any)
+  }
   const dynamicField = useCallback(
     (section: ProxyConfigSection) => {
       const options = ('options' in section && section.options) || null
       const isSingleCheckbox = section.type === FieldType.Checkbox && !options
       const props = (('props' in section && section.props) || {}) as any
       const { suffix: _suffix, ...rest } = props
+      const disabled =
+        ['ip', 'port'].includes(section.key) && !form.getFieldValue('serve') ? true : false
       const suffix = _suffix instanceof Function ? _suffix(() => onSuffixClick(section)) : _suffix
       return (
         <>
@@ -61,20 +101,30 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
           {!isSingleCheckbox && (
             <React.Fragment>
               {section.type === FieldType.Input && (
-                <Input {...rest} suffix={suffix} className="!w-full" value={section.value} />
+                <Input
+                  {...rest}
+                  disabled={disabled}
+                  suffix={suffix}
+                  className="!w-full"
+                  value={section.value}
+                />
               )}
               {section.type === FieldType.Checkbox && (
-                <Checkbox.Group options={options} value={section.value}></Checkbox.Group>
+                <Checkbox.Group
+                  disabled={disabled}
+                  options={options}
+                  value={section.value}
+                ></Checkbox.Group>
               )}
               {section.type === FieldType.Select && (
-                <Select className="!w-full" options={options}></Select>
+                <Select disabled={disabled} className="!w-full" options={options}></Select>
               )}
             </React.Fragment>
           )}
         </>
       )
     },
-    [onSuffixClick]
+    [form, onSuffixClick]
   )
   const dynamicFormItem = useCallback(
     (section) => {
@@ -98,9 +148,10 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
             wrapperCol={{ span: 14 }}
             form={form}
             onFinish={onFinish}
+            onFieldsChange={onFieldsChange}
             name="proxyForm"
           >
-            {ProxyConfig.map((item) => (
+            {configs.map((item) => (
               <React.Fragment key={item.key}>
                 <section>
                   <div className="!font-semibold !mb-2">{item.sectionName}</div>
@@ -133,20 +184,20 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">时区</div>
-              <div className="flex-1 text-right">{config?.timezone || '-'}</div>
+              <div className="flex-1 text-right">{IpConfig?.timezone || '-'}</div>
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">IP地址</div>
-              <div className="flex-1 text-right">{config?.ip || '-'}</div>
+              <div className="flex-1 text-right">{IpConfig?.ip || '-'}</div>
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">地理位置</div>
               <div className="flex-1 text-right">
+                <>{IpConfig?.city}</>
                 <>
-                  {config?.city}
-                  {config?.city ? '|' : ''}
+                  {IpConfig?.country ? '|' : ''}
+                  {IpConfig?.country || '-'}
                 </>
-                <>{config?.country || '-'}</>
               </div>
             </div>
           </div>

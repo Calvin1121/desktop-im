@@ -46,14 +46,7 @@ export const ProxyConfig = [
     sectionName: '代理设置',
     key: 'proxy',
     sections: [
-      { label: '代理服务器', key: 'serve', value: '', type: FieldType.Checkbox },
-      {
-        label: '选择代理',
-        key: 'select',
-        value: null as any,
-        type: FieldType.Input,
-        tips: ''
-      },
+      { label: '启动代理', key: 'serve', value: '', type: FieldType.Checkbox },
       {
         label: '代理类型',
         key: 'type',
@@ -66,6 +59,20 @@ export const ProxyConfig = [
           { label: 'SOCKS4', value: 'SOCKS4' },
           { label: 'SOCKS5', value: 'SOCKS5' }
         ] as any
+      },
+      {
+        label: 'IP地址',
+        key: 'ip',
+        value: null as any,
+        type: FieldType.Input,
+        tips: '',
+      },
+      {
+        label: 'IP端口',
+        key: 'port',
+        value: null as any,
+        type: FieldType.Input,
+        tips: ''
       }
     ]
   }

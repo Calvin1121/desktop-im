@@ -53,7 +53,9 @@ export interface IPInfo {
 }
 
 export interface IProxyTabConfig {
+  isDefaultIp: boolean
   ip: string
+  port: string
   timezone: string
   city: string
   country: string
@@ -61,8 +63,7 @@ export interface IProxyTabConfig {
   name: string
   system?: string[]
   serve: boolean
-  select: string
-  value: string[]
+  type: string[]
 }
 
 export interface TabUser {
