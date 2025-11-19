@@ -1,17 +1,17 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { ToolType } from './index.constant'
 import TabProxy from './tabProxy'
+import { ConfigMap } from 'src/model/type'
 import _ from 'lodash'
 
 interface Props {
-  tab: Tab
+  toolType?: ToolType
+  configMap?: ConfigMap
   onCancel: () => void
   onConfirm: (config: Record<string, any>, toolType?: ToolType, isManual?: boolean) => void
 }
 const ToolPanel: React.FC<Props> = React.memo((props: Props) => {
-  const { tab, onConfirm, onCancel } = props
-  const toolType = useMemo(() => tab.toolType as ToolType, [tab.toolType])
-  const configMap = useMemo(() => tab.configMap ?? {}, [tab.configMap])
+  const { toolType, configMap, onConfirm, onCancel } = props
   return (
     <TabProxy
       config={_.get(configMap, ToolType.onSetTabProxy)}

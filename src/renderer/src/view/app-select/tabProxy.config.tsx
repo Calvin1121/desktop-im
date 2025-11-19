@@ -1,6 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import { IconSwitch } from '@renderer/components/iconfont'
 
-// eslint-disable-next-line react-refresh/only-export-components
 export enum FieldType {
   Input = 'input',
   Checkbox = 'checkbox',
@@ -8,6 +8,15 @@ export enum FieldType {
   Button = 'button'
 }
 
+export const ipRules = [
+  { required: true, message: '请输入 IP:端口' },
+  {
+    pattern:
+      /^((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3})(:(6553[0-5]|655[0-2]\d|65[0-4]\d{2}|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}))?$/,
+    message: '请输入正确的 IPv4 地址与端口，如 192.168.1.1:8080'
+  }
+]
+export const ipTypeRules = [{ required: true, message: '请选择代理类型' }]
 export const ProxyConfig = [
   {
     sectionName: '编辑指纹环境',
@@ -65,15 +74,15 @@ export const ProxyConfig = [
         key: 'ip',
         value: null as any,
         type: FieldType.Input,
-        tips: '',
-      },
-      {
-        label: 'IP端口',
-        key: 'port',
-        value: null as any,
-        type: FieldType.Input,
         tips: ''
       }
+      // {
+      //   label: 'IP端口',
+      //   key: 'port',
+      //   value: null as any,
+      //   type: FieldType.Input,
+      //   tips: ''
+      // }
     ]
   }
 ] as const

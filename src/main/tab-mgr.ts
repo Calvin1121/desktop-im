@@ -29,16 +29,6 @@ export class TabMgr {
       tab.isVisible = status
     }
   }
-  async getIPLocation(ip?: string, port?: string) {
-    return new Promise((resolve) => {
-      try {
-        // resolve({})
-        ipapi.location((res) => resolve(res), ip ?? '', port ?? '')
-      } catch {
-        resolve({})
-      }
-    })
-  }
   genUserAgent(system?: string[]) {
     try {
       if (system?.length) {

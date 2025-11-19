@@ -1,79 +1,49 @@
-/* eslint-disable react/prop-types */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FieldType, ProxyConfig, ProxyConfigSection, ProxyConfigType } from './tabProxy.config'
+import React, { useState } from 'react'
+import {
+  FieldType,
+  ipRules,
+  ipTypeRules,
+  ProxyConfig,
+  ProxyConfigSection,
+  ProxyConfigType
+} from './tabProxy.config'
 import { Button, Checkbox, Form, Input, Select, Space } from 'antd'
 import { IProxyTabConfig } from 'src/model/type'
 import _ from 'lodash'
 import { removeEmpty } from '@renderer/utils/util'
 
 interface Props {
-  config: IProxyTabConfig
+  config?: IProxyTabConfig
   onCancel: () => void
   onConfirm: (config: IProxyTabConfig, isManual?: boolean) => void
 }
 const TabProxy: React.FC<Props> = React.memo((props: Props) => {
-  const isGotIpRef = useRef(false)
   const { onCancel, onConfirm, config: configProps } = props
   const [configs, setConfigs] = useState<ProxyConfigType>(ProxyConfig)
-  const [defaultIpConfig, setDefaultIpConfig] = useState<Partial<IProxyTabConfig>>()
-  const IpConfig = useMemo(
-    () => (configProps?.ip ? configProps : defaultIpConfig),
-    [configProps, defaultIpConfig]
-  )
   const [form] = Form.useForm()
-  const [config, setConfig] = useState<IProxyTabConfig>()
-  const onGenUserAgent = useCallback(
-    async (key: string) => {
-      const value = form.getFieldValue('system')
-      const agent = await window.api.genUserAgent(value)
-      form.setFieldValue(key, agent)
-      setConfig((prev = {} as IProxyTabConfig) => ({ ...prev, agent }))
-    },
-    [form]
-  )
-  const onSuffixClick = useCallback(
-    (section: ProxyConfigSection) => {
-      if (section.key === 'agent') onGenUserAgent(section.key)
-    },
-    [onGenUserAgent]
-  )
-  const onFinish = (values: any) => {
-    const config = removeEmpty(values)
-    onConfirm(config, true)
+  const [config, setConfig] = useState<IProxyTabConfig>(() => configProps as IProxyTabConfig)
+  const onGenUserAgent = async () => {
+    const value = form.getFieldValue('system')
+    const agent = await window.api.genUserAgent(value)
+    form.setFieldsValue({ agent })
+    setConfig((prev = {} as IProxyTabConfig) => ({ ...prev, agent }))
   }
-  useEffect(() => {
-    const initTab = async () => {
-      const _configProps = _.cloneDeep(configProps || {})
-      if (!_configProps.agent) _configProps.agent = window.navigator.userAgent
-      form.setFieldsValue(_configProps)
-      setConfig(_configProps)
-      if (!_.isEqual(_configProps, configProps)) onConfirm(_configProps)
-    }
-    initTab()
-  }, [configProps, form, onConfirm])
-  const getIPLocation = async (ip?: string, port?: string) => {
-    if (isGotIpRef.current) return
-    isGotIpRef.current = true
-    const ipInfo = await window.api.getIPLocation(ip, port)
-    const ipConfig = _.pick(ipInfo, ['ip', 'timezone', 'city', 'country'])
-    isGotIpRef.current = false
-    if (ip && port) {
-      setConfig((prev) => ({ ...prev, ...ipConfig }))
-    } else {
-      setDefaultIpConfig(ipConfig)
-    }
+  const onSuffixClick = (section: ProxyConfigSection) => {
+    if (section.key === 'agent') onGenUserAgent()
   }
-  useEffect(() => {
-    if (!configProps?.ip && !defaultIpConfig) getIPLocation()
-  }, [configProps?.ip, defaultIpConfig])
-  useEffect(() => {
-    if (configProps?.ip && configProps?.port) getIPLocation(configProps.ip, configProps.port)
-  }, [configProps?.ip, configProps?.port])
+  const onFinish = async (values: any) => {
+    const config = removeEmpty(values ?? {})
+    onConfirm(config, !!values)
+  }
   const onFieldsChange = (changedFields) => {
     const field = changedFields[0]
     const fieldName = field?.name?.[0]
     const filedValue = field?.value
-    // form.setFieldValue(fieldName, filedValue)
+    if (fieldName === 'serve' && !filedValue)
+      form.setFields([
+        { name: 'ip', errors: [] },
+        { name: 'type', errors: [] }
+      ])
     const _configs = configs.map((config) => {
       const { sections, ...rest } = config
       return {
@@ -86,57 +56,18 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
     })
     setConfigs(_configs as any)
   }
-  const dynamicField = useCallback(
-    (section: ProxyConfigSection) => {
-      const options = ('options' in section && section.options) || null
-      const isSingleCheckbox = section.type === FieldType.Checkbox && !options
-      const props = (('props' in section && section.props) || {}) as any
-      const { suffix: _suffix, ...rest } = props
-      const disabled =
-        ['ip', 'port'].includes(section.key) && !form.getFieldValue('serve') ? true : false
-      const suffix = _suffix instanceof Function ? _suffix(() => onSuffixClick(section)) : _suffix
-      return (
-        <>
-          {isSingleCheckbox && <Checkbox value={section.value}>{section.label}</Checkbox>}
-          {!isSingleCheckbox && (
-            <React.Fragment>
-              {section.type === FieldType.Input && (
-                <Input
-                  {...rest}
-                  disabled={disabled}
-                  suffix={suffix}
-                  className="!w-full"
-                  value={section.value}
-                />
-              )}
-              {section.type === FieldType.Checkbox && (
-                <Checkbox.Group
-                  disabled={disabled}
-                  options={options}
-                  value={section.value}
-                ></Checkbox.Group>
-              )}
-              {section.type === FieldType.Select && (
-                <Select disabled={disabled} className="!w-full" options={options}></Select>
-              )}
-            </React.Fragment>
-          )}
-        </>
-      )
-    },
-    [form, onSuffixClick]
-  )
-  const dynamicFormItem = useCallback(
-    (section) => {
-      const { key, label } = section
-      const props = { name: key, label }
-      if (section.type === FieldType.Checkbox && !section.options) {
-        Object.assign(props, { valuePropName: 'checked' })
-      }
-      return <Form.Item {...props}>{dynamicField(section)}</Form.Item>
-    },
-    [dynamicField]
-  )
+  const onDisabled = (section) => {
+    if (section.key === 'ip') {
+      return !(form.getFieldValue('serve') ?? configProps?.serve)
+    }
+    return false
+  }
+  const onRules = (section) => {
+    const isServe = form.getFieldValue('serve') ?? configProps?.serve
+    if (section.key === 'ip' && isServe) return ipRules
+    if (section.key === 'type' && isServe) return ipTypeRules
+    return undefined
+  }
   return (
     <div className="flex flex-col w-full h-full overflow-hidden !p-2">
       <div className="!font-semibold py-1 border-b-[1px] border-[#d9d9d9]">代理设置</div>
@@ -147,6 +78,8 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
             labelCol={{ span: 4 }}
             wrapperCol={{ span: 14 }}
             form={form}
+            initialValues={configProps}
+            scrollToFirstError
             onFinish={onFinish}
             onFieldsChange={onFieldsChange}
             name="proxyForm"
@@ -156,9 +89,61 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
                 <section>
                   <div className="!font-semibold !mb-2">{item.sectionName}</div>
                   <main>
-                    {item.sections.map((section) => (
-                      <React.Fragment key={section.key}>{dynamicFormItem(section)}</React.Fragment>
-                    ))}
+                    {item.sections.map((section) => {
+                      const { key, label, options, props } = section
+                      const rules = onRules(section)
+                      const disabled = onDisabled(section)
+                      const itemProps = { name: key, label, rules }
+                      const isSingleCheckbox = section.type === FieldType.Checkbox && !options
+                      const rest = _.omit(props, 'suffix')
+                      const _suffix = _.get(props, 'suffix')
+                      const suffix =
+                        _suffix instanceof Function
+                          ? _suffix(() => onSuffixClick?.(section))
+                          : _suffix
+                      if (section.type === FieldType.Checkbox && !section.options) {
+                        Object.assign(itemProps, { valuePropName: 'checked' })
+                      }
+
+                      return (
+                        <React.Fragment key={section.key}>
+                          <Form.Item {...itemProps}>
+                            <>
+                              {isSingleCheckbox && (
+                                <Checkbox value={section.value}>{section.label}</Checkbox>
+                              )}
+                              {!isSingleCheckbox && (
+                                <React.Fragment>
+                                  {section.type === FieldType.Input && (
+                                    <Input
+                                      {...rest}
+                                      disabled={disabled}
+                                      suffix={suffix}
+                                      className="!w-full"
+                                      value={section.value}
+                                    />
+                                  )}
+                                  {section.type === FieldType.Checkbox && (
+                                    <Checkbox.Group
+                                      disabled={disabled}
+                                      options={options}
+                                      value={section.value}
+                                    ></Checkbox.Group>
+                                  )}
+                                  {section.type === FieldType.Select && (
+                                    <Select
+                                      disabled={disabled}
+                                      className="!w-full"
+                                      options={options}
+                                    ></Select>
+                                  )}
+                                </React.Fragment>
+                              )}
+                            </>
+                          </Form.Item>
+                        </React.Fragment>
+                      )
+                    })}
                   </main>
                 </section>
               </React.Fragment>
@@ -184,20 +169,16 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">时区</div>
-              <div className="flex-1 text-right">{IpConfig?.timezone || '-'}</div>
+              <div className="flex-1 text-right">{config?.timezone || '-'}</div>
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">IP地址</div>
-              <div className="flex-1 text-right">{IpConfig?.ip || '-'}</div>
+              <div className="flex-1 text-right">{config?.ip || '-'}</div>
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">地理位置</div>
               <div className="flex-1 text-right">
-                <>{IpConfig?.city}</>
-                <>
-                  {IpConfig?.country ? '|' : ''}
-                  {IpConfig?.country || '-'}
-                </>
+                <>{config?.country || '-'}</>
               </div>
             </div>
           </div>

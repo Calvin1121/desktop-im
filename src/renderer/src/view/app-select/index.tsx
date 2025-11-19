@@ -11,8 +11,11 @@ import ToolBar from './index.toolbar'
 import ToolPanel from './index.toolpanel'
 import { ToolType } from './index.constant'
 import { useMainStates } from '@renderer/main.provider'
+import { IProxyTabConfig } from 'src/model/type'
+import { useIPLocation } from '@renderer/api/utils'
 
 export default function AppSelect() {
+  const { trigger: getIPLocation } = useIPLocation()
   const { onToast, states } = useMainStates()
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTabId, setActiveTabId] = useState<string>()
@@ -20,19 +23,22 @@ export default function AppSelect() {
   const containerRef = useRef<HTMLDivElement>(null)
   const maxTab = useMemo(() => states.loginInfo?.tabCount || MAX_TAB, [states.loginInfo?.tabCount])
   const isExceed = useMemo(() => tabs.length >= maxTab, [maxTab, tabs.length])
-
+  const updatingProxyConfigSet = useRef<Map<string, boolean>>(new Map())
   const activeTab = useMemo(
     () => tabs.find((item) => item.uuid === activeTabId),
     [tabs, activeTabId]
   )
-  const onUpdateTabs = useCallback((uuid?: string, callback?: (tab: Tab) => void) => {
-    setTabs((prev) =>
-      prev.map((tab) => {
-        if (tab.uuid === uuid) callback?.(tab)
-        return tab
-      })
-    )
-  }, [])
+  const toolType = useMemo(() => activeTab?.toolType, [activeTab?.toolType])
+  const configMap = useMemo(() => activeTab?.configMap, [activeTab?.configMap])
+  const proxyConfig = useMemo(() => _.get(configMap, ToolType.onSetTabProxy), [configMap])
+  // const onUpdateTabs = useCallback((uuid?: string, callback?: (tab: Tab) => void) => {
+  //   setTabs((prev) =>
+  //     prev.map((tab) => {
+  //       if (tab.uuid === uuid) callback?.(tab)
+  //       return tab
+  //     })
+  //   )
+  // }, [])
 
   const isInit = useRef(false)
   const getBounds = () => {
@@ -119,28 +125,44 @@ export default function AppSelect() {
     if (activeTab?.isRefreshing) return
     const onSaving = async () => {
       await window.api.refreshTab(activeTabId!)
-      onUpdateTabs(activeTabId, (tab) => {
-        if (tab.isRefreshing) tab.isRefreshing = false
-      })
+      setTabs((prev) =>
+        prev.map((tab) => {
+          if (tab.uuid === activeTabId && tab.isRefreshing) tab.isRefreshing = false
+          return tab
+        })
+      )
     }
     onToast({ callback: onSaving(), loading: '刷新中', success: '刷新成功' })
-    onUpdateTabs(activeTabId, (tab) => {
-      if (!tab.isRefreshing) tab.isRefreshing = true
-    })
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.uuid === activeTabId && !tab.isRefreshing) tab.isRefreshing = true
+        return tab
+      })
+    )
   }
   const onTogglePanel = (toolType) => {
     if (ToolType.onSetTabProxy === toolType || !toolType) {
-      onUpdateTabs(activeTabId, (tab) => {
-        tab.isPanelVisible = !!toolType
-        window.api.toggleTab(tab.uuid, !tab.isPanelVisible)
-      })
+      setTabs((prev) =>
+        prev.map((tab) => {
+          if (tab.uuid === activeTabId) {
+            tab.isPanelVisible = !!toolType
+            window.api.toggleTab(tab.uuid, !tab.isPanelVisible)
+          }
+          return tab
+        })
+      )
     }
   }
   const onUpdateTabsByToolbar = (toolType?: ToolType) => {
-    onUpdateTabs(activeTabId, (tab) => {
-      tab.toolType = toolType
-      onTogglePanel(tab.toolType)
-    })
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.uuid === activeTabId) {
+          tab.toolType = toolType
+          onTogglePanel(tab.toolType)
+        }
+        return tab
+      })
+    )
   }
   const onTapToolCallback = (toolType: ToolType) => {
     if ([ToolType.onTabRefresh].includes(toolType)) {
@@ -163,15 +185,41 @@ export default function AppSelect() {
     toolType?: ToolType,
     isManual?: boolean
   ) => {
-    const isUpdate = !_.isEqual(config, _.get(activeTab?.configMap, toolType))
-    if (activeTab && toolType && isUpdate) {
-      onUpdateTabs(activeTabId, (tab) => {
-        tab.configMap = tab.configMap ?? {}
-        _.set(tab.configMap, toolType, config)
+    if (!activeTabId || !toolType) return
+    const _prevToolConfig = activeTab?.configMap?.[toolType]
+    const isUpdate = !_.isEqual(config, _prevToolConfig)
+    if (!isUpdate) return
+    const configMap = activeTab?.configMap ?? {}
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.uuid === activeTabId) {
+          tab.configMap = { ...configMap, [toolType]: config }
+        }
+        return tab
       })
-    }
+    )
     if (isManual) onUpdateTabsByToolbar(undefined)
   }
+  const updateProxyConfig = async (inProxyConfig: IProxyTabConfig, activeTabId: string) => {
+    const proxyConfigSet = updatingProxyConfigSet.current
+    if (proxyConfigSet.get(activeTabId)) return
+    proxyConfigSet.set(activeTabId, true)
+    const _proxyConfig = { ...inProxyConfig }
+    // if (inProxyConfig?.ip !== proxyConfig?.id) {
+    const ipInfo = await getIPLocation({ ip: _proxyConfig?.ip ?? '' })
+    const ipConfig = _.pick(ipInfo, ['ip', 'timezone', 'country'])
+    Object.assign(_proxyConfig, ipConfig)
+    // }
+
+    if (!_proxyConfig.agent) _proxyConfig.agent = window.navigator.userAgent
+    proxyConfigSet.delete(activeTabId)
+    onToolConfigConfirm(_proxyConfig, ToolType.onSetTabProxy)
+  }
+
+  useEffect(() => {
+    activeTabId && updateProxyConfig(proxyConfig, activeTabId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proxyConfig, activeTabId])
 
   return (
     <div className={styles.container}>
@@ -224,7 +272,8 @@ export default function AppSelect() {
             )}
             {activeTab.isPanelVisible && (
               <ToolPanel
-                tab={activeTab}
+                toolType={toolType}
+                configMap={configMap}
                 onCancel={() => onTapToolCallback(ToolType.onTogglePanel)}
                 onConfirm={onToolConfigConfirm}
               />

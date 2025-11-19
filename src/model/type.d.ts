@@ -1,6 +1,10 @@
 import { IM_TYPE } from '@renderer/app.model'
 import { MessageTypeCode } from './index'
 
+export interface ConfigMap {
+  [key: ToolType]: IProxyTabConfig | any
+}
+
 export interface Tab {
   name?: string
   uuid: string
@@ -12,8 +16,8 @@ export interface Tab {
   loaded?: boolean
   isPanelVisible?: boolean
   isRefreshing?: boolean
-  toolType?: string
-  configMap?: Record<string, any>
+  toolType?: ToolType
+  configMap?: ConfigMap
 }
 export interface Bounds {
   width: number
