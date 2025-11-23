@@ -1,5 +1,5 @@
-import { BrowserWindow } from 'electron'
-import { Bounds, Tab, TabUser } from '../model/type'
+import { BrowserWindow, session } from 'electron'
+import { Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
 import { TabInstance } from './base-tab'
 import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
@@ -7,6 +7,7 @@ import { tabEventBus, TabEvents } from './event-bus'
 import { DefaultTab } from './default-tab/tab'
 import UserAgent from 'user-agents'
 import { SocketEvent } from '../model/common.constant'
+import { normalizeProxyAddress } from './utils'
 
 export class TabMgr {
   private mainWindow: BrowserWindow
@@ -51,8 +52,25 @@ export class TabMgr {
       }
     })
   }
-  tabProxy(tabUuid, proxyUrl) {
-    console.log(tabUuid, proxyUrl)
+  async tabProxy(tabUuid, proxyConfig: IProxyTabConfig) {
+    try {
+      const tab = this.tabs.get(tabUuid)
+      const webContents = tab?.view.webContents
+      if (webContents) {
+        const { serve, ip, type, agent } = proxyConfig
+        const proxyRules =
+          serve && ip && type
+            ? {
+                proxyRules: `${type}=${normalizeProxyAddress(ip)}`,
+                proxyBypassRules: 'localhost,127.0.0.1,<local>'
+              }
+            : {}
+        await webContents.session.setUserAgent(agent)
+        await webContents.session.setProxy(proxyRules)
+      }
+    } catch (error) {
+      console.error(error)
+    }
   }
   hideTabs(): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

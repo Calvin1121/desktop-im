@@ -12,6 +12,7 @@ import ToolPanel from './index.toolpanel'
 import { ToolType } from './index.constant'
 import { useMainStates } from '@renderer/main.provider'
 import { useIPLocation } from '@renderer/api/utils'
+import { IProxyTabConfig } from 'src/model/type'
 
 export default function AppSelect() {
   const { onToast, states } = useMainStates()
@@ -86,12 +87,13 @@ export default function AppSelect() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const onOpenUrl = (item: Tab) => {
-    const { uuid, url, user, index, key, configMap = {}, toolType = '', name } = item
+    console.log(item)
+    const { uuid, url, index, key, name } = item
     setTabs((prev) =>
       prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: true, name } : tab))
     )
     const prevTabState = tabStateRef.current.get(uuid) || {}
-    const newTabState = Object.assign(prevTabState, { url, user, index, key, configMap, toolType })
+    const newTabState = Object.assign(prevTabState, { url, index, key })
     tabStateRef.current.set(uuid, newTabState)
     window.api.openUrl(item, getBounds())
   }
@@ -179,6 +181,7 @@ export default function AppSelect() {
     if (toolType === ToolType.onSetTabProxy) {
       const ip = config.serve ? config.ip || '' : ''
       getIPLocation({ uuid: activeTabId, ip })
+      window.api.tabProxy(activeTabId, config as IProxyTabConfig)
     }
     const tabState = tabStateRef.current.get(activeTabId) || {}
     const configMap = tabState?.configMap || {}

@@ -1,10 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { Bounds, Tab, TabUser } from '../model/type'
+import { Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
 
 // Custom APIs for renderer
 const api = {
-  tabProxy: (tabUuid: string, proxyUrl) => ipcRenderer.invoke('tabProxy', tabUuid, proxyUrl),
+  tabProxy: (tabUuid: string, proxyConfig: IProxyTabConfig) => ipcRenderer.invoke('tabProxy', tabUuid, proxyConfig),
   genUserAgent: (system?: string[]) => ipcRenderer.invoke('genUserAgent', system),
   refreshTab: (tabUuid: string) => ipcRenderer.invoke('refreshTab', tabUuid),
   toggleTab: (tabUuid: string, status: boolean) => ipcRenderer.send('toggleTab', tabUuid, status),

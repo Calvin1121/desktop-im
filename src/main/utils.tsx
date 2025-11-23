@@ -75,3 +75,18 @@ export function mergeUnique<T extends Record<string, any>>(
 ): T[] {
   return _.values(_.assign(_.keyBy(oldArr, key), _.keyBy(newArr, key)))
 }
+
+export function normalizeProxyAddress(ip: string, defaultPort = 8080) {
+  if (!ip) return ''
+
+  if (ip.includes(':')) {
+    const parts = ip.split(':')
+    const last = parts[parts.length - 1]
+
+    if (/^\d+$/.test(last)) {
+      return ip
+    }
+  }
+
+  return `${ip}:${defaultPort}`
+}

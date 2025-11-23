@@ -3,13 +3,15 @@ import {
   Tab as TabType,
   Bounds as BoundsType,
   TabUser as TabUserType,
-  BaseTab as BaseTabType
+  BaseTab as BaseTabType,
+  IProxyTabConfig
 } from '../model/type'
 
 declare global {
   interface Window {
     electron: ElectronAPI
     api: {
+      tabProxy: (tabUuid: string, proxyConfig: IProxyTabConfig) => Promise<any>
       genUserAgent: (system?: string[]) => Promise<string>
       refreshTab: (tabUuid: string) => Promise<boolean>
       toggleTab: (tabUuid: string, status: boolean) => void
