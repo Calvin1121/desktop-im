@@ -36,6 +36,9 @@ export default function AppSelect() {
     const { height: y = 36, left: x = 0 } = barRef.current?.getBoundingClientRect() ?? {}
     return { width, height, x, y }
   }
+  const getTabByUuid = (uuid: string) => {
+    return tabs.find((tab) => tab.uuid === uuid) as BaseTab
+  }
   const onAddTab = () => {
     if (isExceed) return
     const uuid = v4()
@@ -53,7 +56,11 @@ export default function AppSelect() {
       setActiveTabId(newTab?.uuid)
     }
     if (tabs.length) {
-      window.api.closeTab(tab.uuid, newTab?.uuid ?? '', getBounds())
+      window.api.closeTab(
+        tab.uuid,
+        getBounds(),
+        newTab?.uuid ? getTabByUuid(newTab.uuid) : undefined
+      )
       tabStateRef.current.delete(tab.uuid)
       setTabs(tabs)
     } else window.api.exitApp()
@@ -78,7 +85,7 @@ export default function AppSelect() {
       //   )
       // )
       setActiveTabId(item.uuid)
-      window.api.switchTab(item.uuid, getBounds())
+      window.api.switchTab(getTabByUuid(item.uuid), getBounds())
     }
   }
   useEffect(() => {
@@ -110,8 +117,9 @@ export default function AppSelect() {
     })
     window.api.onTabSwitched((uuid) => {
       setActiveTabId(uuid)
-      window.api.switchTab(uuid, getBounds())
+      window.api.switchTab(getTabByUuid(uuid), getBounds())
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   useEffect(() => {
     const onResize = _.debounce(() => {
@@ -143,7 +151,7 @@ export default function AppSelect() {
       const _tab = tabs.find((tab) => tab.uuid === activeTabId)
       if (!_tab || tabStateRef.current.get(activeTabId)?.toolType === toolType) return
       _tab.isPanelVisible = !!toolType
-      window.api.toggleTab(activeTabId, !_tab.isPanelVisible)
+      window.api.toggleTab(_tab, !_tab.isPanelVisible)
       const currentTabState = { ...tabStateRef.current.get(activeTabId), toolType }
       tabStateRef.current.set(activeTabId, currentTabState)
       setTabs([...tabs])

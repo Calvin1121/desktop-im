@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
+import { BaseTab, Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
 import { TabInstance } from './base-tab'
 import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
@@ -22,10 +22,11 @@ export class TabMgr {
   get tabInstances(): Map<string, TabInstance> {
     return this.tabs
   }
-  toggleTab(tabUuid: string, status: boolean) {
-    const tab = this.tabs.get(tabUuid)
-    if (tab) {
-      tab.isVisible = status
+  toggleTab(tab: BaseTab, status: boolean) {
+    const tabInstance = this.tabs.get(tab.uuid)
+    if (tabInstance) {
+      tabInstance.updateTab(tab)
+      tabInstance.isVisible = status
     }
   }
   genUserAgent(system?: string[]) {
@@ -41,8 +42,8 @@ export class TabMgr {
   }
   refreshTab(tabUuid: string) {
     return new Promise((resolve, reject) => {
-      const tab = this.tabs.get(tabUuid)
-      const webContents = tab?.view.webContents
+      const tabInstance = this.tabs.get(tabUuid)
+      const webContents = tabInstance?.view.webContents
       if (webContents) {
         webContents.once('did-finish-load', () => resolve(true))
         webContents.reloadIgnoringCache()
@@ -51,10 +52,10 @@ export class TabMgr {
       }
     })
   }
-  async tabProxy(tabUuid, proxyConfig: IProxyTabConfig, isRefresh: boolean = true) {
+  async tabProxy(tabUuid: string, proxyConfig: IProxyTabConfig, isRefresh: boolean = true) {
     try {
-      const tab = this.tabs.get(tabUuid)
-      const webContents = tab?.view.webContents
+      const tabInstance = this.tabs.get(tabUuid)
+      const webContents = tabInstance?.view.webContents
       if (webContents) {
         const { serve, ip, type, agent, port } = proxyConfig
         const _port = `:${port || '8080'}`
@@ -75,18 +76,23 @@ export class TabMgr {
   openTab() {
     this.hideTabs()
   }
+  onCloseTab(tabUuid: string, bounds: Bounds, newTab?: BaseTab) {
+    if (newTab) this.switchTab(newTab, bounds)
+    this.closeTab(tabUuid)
+  }
   hideTabs(): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [_, tab] of this.tabs) {
       tab.isVisible = false
     }
   }
-  switchTab(tabUuid: string, bounds: Electron.Rectangle): void {
+  switchTab(tab: BaseTab, bounds: Electron.Rectangle): void {
     this.hideTabs()
-    const tabInstances = this.tabs.get(tabUuid)
-    if (tabInstances) {
-      tabInstances.updateBounds(bounds)
-      tabInstances.isVisible = true
+    const tabInstance = this.tabs.get(tab.uuid)
+    if (tabInstance) {
+      tabInstance.updateTab(tab)
+      tabInstance.updateBounds(bounds)
+      tabInstance.isVisible = true
     }
   }
   onGenerateTab(tab: Tab) {
@@ -101,7 +107,7 @@ export class TabMgr {
       const uuid = tab.uuid
       const res = { tabUuid: uuid }
       if (this.tabs.has(uuid)) {
-        this.switchTab(uuid, bounds)
+        this.switchTab(tab, bounds)
         return
       }
       const instance = this.onGenerateTab(tab)

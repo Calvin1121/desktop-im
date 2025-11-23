@@ -1,6 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, MessageBoxOptions } from 'electron'
 import { TabMgr } from '../tab-mgr'
-import { BaseTab } from '../../model/type'
 
 export async function exitAppMessageBox() {
   const exitAppOptions: MessageBoxOptions = {
@@ -23,16 +22,13 @@ export const initIpcMain = (app: Electron.App, mainWindow: BrowserWindow) => {
   ipcMain.handle('tabProxy', (_, tabUuid, proxyConfig) => tabManager.tabProxy(tabUuid, proxyConfig))
   ipcMain.handle('genUserAgent', async (_, system: string[]) => tabManager.genUserAgent(system))
   ipcMain.handle('refreshTab', (_, tabUuid) => tabManager.refreshTab(tabUuid))
-  ipcMain.on('toggleTab', (_, tabUuid, status) => tabManager.toggleTab(tabUuid, status))
+  ipcMain.on('toggleTab', (_, tab, status) => tabManager.toggleTab(tab, status))
   ipcMain.handle('openUrl', (_, tab, bounds, proxyConfig) =>
     tabManager.openUrl(tab, bounds, proxyConfig)
   )
-  ipcMain.on('switchTab', (_, tabUuid, bounds) => tabManager.switchTab(tabUuid, bounds))
+  ipcMain.on('switchTab', (_, tab, bounds) => tabManager.switchTab(tab, bounds))
   ipcMain.handle('openTab', () => tabManager.openTab())
-  ipcMain.on('closeTab', (_, tabUuid, newTabUuid, bounds) => {
-    if (newTabUuid) tabManager.switchTab(newTabUuid, bounds)
-    tabManager.closeTab(tabUuid)
-  })
+  ipcMain.on('closeTab', (_, uuid, bounds, newTab) => tabManager.onCloseTab(uuid, bounds, newTab))
   ipcMain.on('resize', (_, tabUuid, bounds) => tabManager.resizeTab(tabUuid, bounds))
   ipcMain.handle('exitApp', async () => {
     const isExit = await exitAppMessageBox()

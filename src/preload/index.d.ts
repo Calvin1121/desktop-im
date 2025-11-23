@@ -14,15 +14,15 @@ declare global {
       tabProxy: (tabUuid: string, proxyConfig: IProxyTabConfig) => Promise<any>
       genUserAgent: (system?: string[]) => Promise<string>
       refreshTab: (tabUuid: string) => Promise<boolean>
-      toggleTab: (tabUuid: string, status: boolean) => void
+      toggleTab: (tab: BaseTab, status: boolean) => void
       openUrl: (
         tab: Tab,
         bounds: Bounds,
         proxyConfig: IProxyTabConfig
       ) => Promise<{ tabUuid: string; err?: Error }>
       openTab: () => void
-      switchTab: (tabUuid: string, bounds: Bounds) => void
-      closeTab: (tabUuid: string, newTabUuid: string, bounds: Bounds) => void
+      switchTab: (tab: BaseTab, bounds: Bounds) => void
+      closeTab: (tabUuid: string, bounds: Bounds, newTab?: BaseTab) => void
       resize: (tabUuid: string, bounds: Bounds) => void
       exitApp: () => Promise<Electron.MessageBoxReturnValue | undefined>
       onTabUser: (callback?: (user: TabUser, tabUuid: string) => void) => void

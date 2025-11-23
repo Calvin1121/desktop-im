@@ -6,11 +6,12 @@ import { Worker } from 'node:worker_threads'
 import creatWorker from './workers/wss-worker?nodeWorker'
 import { FetchOptions } from './fetcher'
 import { showNotificationWithPermissionCheck } from './process/notify'
+import _ from 'lodash'
 
 export abstract class TabInstance {
   readonly uuid: string
   view: BrowserView
-  readonly tab: Tab
+  private tab: Tab
   private wssWorker: Worker | null = null
   private _isVisible: boolean = false
   set isVisible(visible: boolean) {
@@ -96,7 +97,9 @@ export abstract class TabInstance {
       this.view.setAutoResize({ width: true, height: true })
     }
   }
-
+  updateTab(tab: Partial<Tab>) {
+    this.tab = _.merge(this.tab, tab)
+  }
   sendMessage(params: any): void {
     this.onSendMessage(params)
   }
