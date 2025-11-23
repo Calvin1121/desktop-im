@@ -4,6 +4,7 @@ import { Bounds, Tab, TabUser } from '../model/type'
 
 // Custom APIs for renderer
 const api = {
+  tabProxy: (tabUuid: string, proxyUrl) => ipcRenderer.invoke('tabProxy', tabUuid, proxyUrl),
   genUserAgent: (system?: string[]) => ipcRenderer.invoke('genUserAgent', system),
   refreshTab: (tabUuid: string) => ipcRenderer.invoke('refreshTab', tabUuid),
   toggleTab: (tabUuid: string, status: boolean) => ipcRenderer.send('toggleTab', tabUuid, status),

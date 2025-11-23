@@ -6,7 +6,6 @@ import { LineWorksTab } from './line-works/tab'
 import { tabEventBus, TabEvents } from './event-bus'
 import { DefaultTab } from './default-tab/tab'
 import UserAgent from 'user-agents'
-import ipapi from 'ipapi.co'
 import { SocketEvent } from '../model/common.constant'
 
 export class TabMgr {
@@ -51,6 +50,9 @@ export class TabMgr {
         reject(false)
       }
     })
+  }
+  tabProxy(tabUuid, proxyUrl) {
+    console.log(tabUuid, proxyUrl)
   }
   hideTabs(): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

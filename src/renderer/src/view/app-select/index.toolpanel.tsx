@@ -1,17 +1,16 @@
 import React from 'react'
 import { ToolType } from './index.constant'
 import TabProxy from './tabProxy'
-import { ConfigMap } from 'src/model/type'
 import _ from 'lodash'
 
 interface Props {
-  toolType?: ToolType
-  configMap?: ConfigMap
+  tabState?: Partial<Tab>
   onCancel: () => void
   onConfirm: (config: Record<string, any>, toolType?: ToolType, isManual?: boolean) => void
 }
 const ToolPanel: React.FC<Props> = React.memo((props: Props) => {
-  const { toolType, configMap, onConfirm, onCancel } = props
+  const { tabState = {}, onConfirm, onCancel } = props
+  const { toolType, configMap = {} } = tabState
   return (
     <TabProxy
       config={_.get(configMap, ToolType.onSetTabProxy)}

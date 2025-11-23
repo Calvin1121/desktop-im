@@ -2,7 +2,7 @@ import { BASE_IM_LIST } from '../../../../model'
 
 interface Props {
   tabs: typeof BASE_IM_LIST
-  tab: Tab
+  tab: BaseTab
   onOpenUrl: (tab: Tab) => void
 }
 export default function TabsSelect(props: Props) {

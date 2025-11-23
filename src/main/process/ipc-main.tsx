@@ -19,6 +19,7 @@ export const initIpcMain = (app: Electron.App, mainWindow: BrowserWindow) => {
   const tabManager = new TabMgr(mainWindow)
 
   // new api
+  ipcMain.handle('tabProxy', (_, tabUuid, proxyUrl) => tabManager.tabProxy(tabUuid, proxyUrl))
   ipcMain.handle('genUserAgent', async (_, system: string[]) => tabManager.genUserAgent(system))
   ipcMain.handle('refreshTab', (_, tabUuid) => tabManager.refreshTab(tabUuid))
   ipcMain.on('toggleTab', (_, tabUuid, status) => tabManager.toggleTab(tabUuid, status))

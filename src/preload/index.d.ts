@@ -1,5 +1,10 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import { Tab as TabType, Bounds as BoundsType, TabUser as TabUserType } from '../model/type'
+import {
+  Tab as TabType,
+  Bounds as BoundsType,
+  TabUser as TabUserType,
+  BaseTab as BaseTabType
+} from '../model/type'
 
 declare global {
   interface Window {
@@ -21,6 +26,7 @@ declare global {
       msgFromMainToRender: (callback?: (channel, payload) => void) => void
     }
   }
+  interface BaseTab extends BaseTabType {}
   interface Tab extends TabType {}
   interface Bounds extends BoundsType {}
   interface TabUser extends TabUserType {}

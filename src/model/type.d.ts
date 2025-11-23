@@ -5,19 +5,23 @@ export interface ConfigMap {
   [key: ToolType]: IProxyTabConfig | any
 }
 
-export interface Tab {
-  name?: string
+export interface BaseTab {
   uuid: string
-  url: string
-  index?: string
-  key?: IM_TYPE
+  name?: string
+  userName?: string
   loading?: boolean
-  user?: TabUser
   loaded?: boolean
   isPanelVisible?: boolean
   isRefreshing?: boolean
-  toolType?: ToolType
+}
+
+export interface Tab extends BaseTab {
+  url: string
+  index?: string
+  key?: IM_TYPE
+  user?: TabUser
   configMap?: ConfigMap
+  toolType?: ToolType
 }
 export interface Bounds {
   width: number
