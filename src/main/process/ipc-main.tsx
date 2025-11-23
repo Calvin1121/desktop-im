@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, MessageBoxOptions } from 'electron'
 import { TabMgr } from '../tab-mgr'
+import { BaseTab } from '../../model/type'
 
 export async function exitAppMessageBox() {
   const exitAppOptions: MessageBoxOptions = {
@@ -25,7 +26,7 @@ export const initIpcMain = (app: Electron.App, mainWindow: BrowserWindow) => {
   ipcMain.on('toggleTab', (_, tabUuid, status) => tabManager.toggleTab(tabUuid, status))
   ipcMain.on('openUrl', (_, tab, bounds) => tabManager.openUrl(tab, bounds))
   ipcMain.on('switchTab', (_, tabUuid, bounds) => tabManager.switchTab(tabUuid, bounds))
-  ipcMain.on('openTab', () => tabManager.hideTabs())
+  ipcMain.on('openTab', (tab: BaseTab) => tabManager.openTab(tab))
   ipcMain.on('closeTab', (_, tabUuid, newTabUuid, bounds) => {
     if (newTabUuid) tabManager.switchTab(newTabUuid, bounds)
     tabManager.closeTab(tabUuid)

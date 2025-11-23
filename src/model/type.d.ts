@@ -71,7 +71,7 @@ export interface IProxyTabConfig {
   name: string
   system?: string[]
   serve: boolean
-  type: string[]
+  type: string
 }
 
 export interface TabUser {

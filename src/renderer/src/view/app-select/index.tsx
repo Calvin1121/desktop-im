@@ -45,7 +45,7 @@ export default function AppSelect() {
     const _tabs = [...tabs, tab]
     setActiveTabId(uuid)
     setTabs(_tabs)
-    window.api.openTab()
+    window.api.openTab(tab)
     isInit.current = true
   }
   const onCloseIPCEvent = (tabs: BaseTab[], tab: BaseTab, newTab?: BaseTab) => {

@@ -1,5 +1,5 @@
-import { BrowserWindow, session } from 'electron'
-import { Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
+import { BrowserWindow } from 'electron'
+import { BaseTab, Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
 import { TabInstance } from './base-tab'
 import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
@@ -58,19 +58,23 @@ export class TabMgr {
       const webContents = tab?.view.webContents
       if (webContents) {
         const { serve, ip, type, agent } = proxyConfig
+        const _ip = normalizeProxyAddress(ip)
         const proxyRules =
-          serve && ip && type
+          serve && _ip && type
             ? {
-                proxyRules: `${type}=${normalizeProxyAddress(ip)}`,
-                proxyBypassRules: 'localhost,127.0.0.1,<local>'
+                proxyRules: `${type}=${_ip};${type.toLowerCase()}=${_ip}`
               }
             : {}
         await webContents.session.setUserAgent(agent)
         await webContents.session.setProxy(proxyRules)
+        this.refreshTab(tabUuid)
       }
     } catch (error) {
       console.error(error)
     }
+  }
+  openTab(tab: BaseTab) {
+    this.hideTabs()
   }
   hideTabs(): void {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -92,7 +96,7 @@ export class TabMgr {
     }
     return new DefaultTab(tab)
   }
-  openUrl(tab: Tab, bounds: Bounds): void {
+  openUrl(tab: Tab, bounds: Bounds) {
     const uuid = tab.uuid
     if (this.tabs.has(uuid)) {
       this.switchTab(uuid, bounds)

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
+import { BaseTab, Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
 
 // Custom APIs for renderer
 const api = {
@@ -9,7 +9,7 @@ const api = {
   refreshTab: (tabUuid: string) => ipcRenderer.invoke('refreshTab', tabUuid),
   toggleTab: (tabUuid: string, status: boolean) => ipcRenderer.send('toggleTab', tabUuid, status),
   openUrl: (tab: Tab, bounds: Bounds) => ipcRenderer.send('openUrl', tab, bounds),
-  openTab: () => ipcRenderer.send('openTab'),
+  openTab: (tab: BaseTab) => ipcRenderer.invoke('openTab', tab),
   switchTab: (tabUuid: string, bounds: Bounds) => ipcRenderer.send('switchTab', tabUuid, bounds),
   closeTab: (tabUuid: string, newTabUuid: string, bounds: Bounds) =>
     ipcRenderer.send('closeTab', tabUuid, newTabUuid, bounds),

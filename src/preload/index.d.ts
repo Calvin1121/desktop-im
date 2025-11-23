@@ -16,7 +16,7 @@ declare global {
       refreshTab: (tabUuid: string) => Promise<boolean>
       toggleTab: (tabUuid: string, status: boolean) => void
       openUrl: (tab: Tab, bounds: Bounds) => void
-      openTab: () => void
+      openTab: (tab: BaseTab) => void
       switchTab: (tabUuid: string, bounds: Bounds) => void
       closeTab: (tabUuid: string, newTabUuid: string, bounds: Bounds) => void
       resize: (tabUuid: string, bounds: Bounds) => void
