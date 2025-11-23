@@ -4,12 +4,17 @@ import _ from 'lodash'
 
 export const useIPLocation = () => {
   const url = 'https://api.ip.sb/geoip/'
-  return useSWRMutation(url, async (url, { arg }: { arg: { uuid: string; ip?: string } }) => {
-    const _url = url + (arg.ip ?? '')
-    const res = await fetcher(_url)
-    const data = _.pick(res, ['ip', 'timezone', 'country', 'city'])
-    return { ...data, uuid: arg.uuid }
-  })
+  return useSWRMutation(
+    url,
+    async (url, { arg }: { arg: { uuid: string; ip?: string; port?: string } }) => {
+      const ip = arg.ip || ''
+      const port = ip && arg.port ? arg.port : ''
+      const _url = `${url}${ip}${ip && port ? ':' : ''}${port}`
+      const res = await fetcher(_url)
+      const data = _.pick(res, ['ip', 'timezone', 'country', 'city'])
+      return { ...data, uuid: arg.uuid, port }
+    }
+  )
 }
 
 // import { fetcher } from '@renderer/utils/fetcher'

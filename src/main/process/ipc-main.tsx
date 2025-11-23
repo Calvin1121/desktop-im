@@ -24,9 +24,11 @@ export const initIpcMain = (app: Electron.App, mainWindow: BrowserWindow) => {
   ipcMain.handle('genUserAgent', async (_, system: string[]) => tabManager.genUserAgent(system))
   ipcMain.handle('refreshTab', (_, tabUuid) => tabManager.refreshTab(tabUuid))
   ipcMain.on('toggleTab', (_, tabUuid, status) => tabManager.toggleTab(tabUuid, status))
-  ipcMain.on('openUrl', (_, tab, bounds) => tabManager.openUrl(tab, bounds))
+  ipcMain.handle('openUrl', (_, tab, bounds, proxyConfig) =>
+    tabManager.openUrl(tab, bounds, proxyConfig)
+  )
   ipcMain.on('switchTab', (_, tabUuid, bounds) => tabManager.switchTab(tabUuid, bounds))
-  ipcMain.on('openTab', (tab: BaseTab) => tabManager.openTab(tab))
+  ipcMain.handle('openTab', () => tabManager.openTab())
   ipcMain.on('closeTab', (_, tabUuid, newTabUuid, bounds) => {
     if (newTabUuid) tabManager.switchTab(newTabUuid, bounds)
     tabManager.closeTab(tabUuid)

@@ -45,7 +45,7 @@ export default function AppSelect() {
     const _tabs = [...tabs, tab]
     setActiveTabId(uuid)
     setTabs(_tabs)
-    window.api.openTab(tab)
+    window.api.openTab()
     isInit.current = true
   }
   const onCloseIPCEvent = (tabs: BaseTab[], tab: BaseTab, newTab?: BaseTab) => {
@@ -55,7 +55,6 @@ export default function AppSelect() {
     if (tabs.length) {
       window.api.closeTab(tab.uuid, newTab?.uuid ?? '', getBounds())
       tabStateRef.current.delete(tab.uuid)
-
       setTabs(tabs)
     } else window.api.exitApp()
   }
@@ -86,23 +85,21 @@ export default function AppSelect() {
     if (!isInit.current) onAddTab()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const onOpenUrl = (item: Tab) => {
-    console.log(item)
+  const onOpenUrl = async (item: Tab) => {
     const { uuid, url, index, key, name } = item
     setTabs((prev) =>
       prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: true, name } : tab))
     )
     const prevTabState = tabStateRef.current.get(uuid) || {}
     const newTabState = Object.assign(prevTabState, { url, index, key })
+    const proxyConfig = _.get(prevTabState.configMap, ToolType.onSetTabProxy) || {}
     tabStateRef.current.set(uuid, newTabState)
-    window.api.openUrl(item, getBounds())
+    const { tabUuid } = await window.api.openUrl(item, getBounds(), proxyConfig)
+    setTabs((prev) =>
+      prev.map((tab) => (tab.uuid === tabUuid ? { ...tab, loading: false, loaded: true } : tab))
+    )
   }
   useEffect(() => {
-    window.api.onTabLoaded((uuid) => {
-      setTabs((prev) =>
-        prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: false, loaded: true } : tab))
-      )
-    })
     window.api.onTabUser((user, uuid) => {
       const tabState = tabStateRef.current.get(uuid) || {}
       Object.assign(tabState, { user, uuid })
@@ -110,7 +107,6 @@ export default function AppSelect() {
       setTabs((prev) =>
         prev.map((tab) => (tab.uuid === uuid ? { ...tab, userName: user.userName } : tab))
       )
-      // setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, user } : tab)))
     })
     window.api.onTabSwitched((uuid) => {
       setActiveTabId(uuid)
@@ -180,7 +176,8 @@ export default function AppSelect() {
     if (!activeTabId || !toolType) return
     if (toolType === ToolType.onSetTabProxy) {
       const ip = config.serve ? config.ip || '' : ''
-      getIPLocation({ uuid: activeTabId, ip })
+      const port = config.serve ? config.port || '' : ''
+      getIPLocation({ uuid: activeTabId, ip, port })
       window.api.tabProxy(activeTabId, config as IProxyTabConfig)
     }
     const tabState = tabStateRef.current.get(activeTabId) || {}
@@ -197,9 +194,10 @@ export default function AppSelect() {
       const config = _.get(
         tabStateRef.current.get(activeTabId)?.configMap,
         ToolType.onSetTabProxy
-      ) || { ip: '', serve: false }
+      ) || { ip: '', serve: false, port: '8080' }
       const _ip = config.serve ? config.ip || '' : ''
-      getIPLocation({ uuid: activeTabId, ip: _ip })
+      const _port = config.serve ? config.port || '' : ''
+      getIPLocation({ uuid: activeTabId, ip: _ip, port: _port })
     }
   }, [activeTabId, getIPLocation])
 

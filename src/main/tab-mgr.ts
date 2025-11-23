@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron'
-import { BaseTab, Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
+import { Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
 import { TabInstance } from './base-tab'
 import { IM_TYPE } from '../model'
 import { LineWorksTab } from './line-works/tab'
@@ -7,7 +7,6 @@ import { tabEventBus, TabEvents } from './event-bus'
 import { DefaultTab } from './default-tab/tab'
 import UserAgent from 'user-agents'
 import { SocketEvent } from '../model/common.constant'
-import { normalizeProxyAddress } from './utils'
 
 export class TabMgr {
   private mainWindow: BrowserWindow
@@ -52,28 +51,28 @@ export class TabMgr {
       }
     })
   }
-  async tabProxy(tabUuid, proxyConfig: IProxyTabConfig) {
+  async tabProxy(tabUuid, proxyConfig: IProxyTabConfig, isRefresh: boolean = true) {
     try {
       const tab = this.tabs.get(tabUuid)
       const webContents = tab?.view.webContents
       if (webContents) {
-        const { serve, ip, type, agent } = proxyConfig
-        const _ip = normalizeProxyAddress(ip)
+        const { serve, ip, type, agent, port } = proxyConfig
+        const _port = `:${port || '8080'}`
+        const ipPort = ip + _port
         const proxyRules =
-          serve && _ip && type
+          serve && ip && type
             ? {
-                proxyRules: `${type}=${_ip};${type.toLowerCase()}=${_ip}`
+                proxyRules: `${type}=${ipPort};${type.toLowerCase()}=${ipPort}`
               }
             : {}
         await webContents.session.setUserAgent(agent)
         await webContents.session.setProxy(proxyRules)
-        this.refreshTab(tabUuid)
       }
     } catch (error) {
       console.error(error)
     }
   }
-  openTab(tab: BaseTab) {
+  openTab() {
     this.hideTabs()
   }
   hideTabs(): void {
@@ -96,24 +95,24 @@ export class TabMgr {
     }
     return new DefaultTab(tab)
   }
-  openUrl(tab: Tab, bounds: Bounds) {
-    const uuid = tab.uuid
-    if (this.tabs.has(uuid)) {
-      this.switchTab(uuid, bounds)
-      return
-    }
-    const instance = this.onGenerateTab(tab)
-    this.tabs.set(uuid, instance)
-    this.mainWindow.addBrowserView(instance.getView())
-    instance
-      .load(bounds)
-      .then(() => {
-        this.mainWindow.webContents.send('onTabLoaded', uuid)
-        // instance.getView()?.webContents.openDevTools()
-      })
-      .catch((e) => {
-        this.mainWindow.webContents.send('onTabLoaded', uuid, e)
-      })
+  openUrl(tab: Tab, bounds: Bounds, proxyConfig: IProxyTabConfig) {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve) => {
+      const uuid = tab.uuid
+      const res = { tabUuid: uuid }
+      if (this.tabs.has(uuid)) {
+        this.switchTab(uuid, bounds)
+        return
+      }
+      const instance = this.onGenerateTab(tab)
+      this.tabs.set(uuid, instance)
+      this.mainWindow.addBrowserView(instance.getView())
+      await this.tabProxy(uuid, proxyConfig, false)
+      instance
+        .load(bounds)
+        .then(() => resolve(res))
+        .catch((err) => resolve({ ...res, err }))
+    })
   }
   closeTab(tabUuid: string): void {
     try {

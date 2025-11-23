@@ -1,22 +1,22 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { BaseTab, Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
+import { Bounds, IProxyTabConfig, Tab, TabUser } from '../model/type'
 
 // Custom APIs for renderer
 const api = {
-  tabProxy: (tabUuid: string, proxyConfig: IProxyTabConfig) => ipcRenderer.invoke('tabProxy', tabUuid, proxyConfig),
+  tabProxy: (tabUuid: string, proxyConfig: IProxyTabConfig) =>
+    ipcRenderer.invoke('tabProxy', tabUuid, proxyConfig),
   genUserAgent: (system?: string[]) => ipcRenderer.invoke('genUserAgent', system),
   refreshTab: (tabUuid: string) => ipcRenderer.invoke('refreshTab', tabUuid),
   toggleTab: (tabUuid: string, status: boolean) => ipcRenderer.send('toggleTab', tabUuid, status),
-  openUrl: (tab: Tab, bounds: Bounds) => ipcRenderer.send('openUrl', tab, bounds),
-  openTab: (tab: BaseTab) => ipcRenderer.invoke('openTab', tab),
+  openUrl: (tab: Tab, bounds: Bounds, proxyConfig: IProxyTabConfig) =>
+    ipcRenderer.invoke('openUrl', tab, bounds, proxyConfig),
+  openTab: () => ipcRenderer.invoke('openTab'),
   switchTab: (tabUuid: string, bounds: Bounds) => ipcRenderer.send('switchTab', tabUuid, bounds),
   closeTab: (tabUuid: string, newTabUuid: string, bounds: Bounds) =>
     ipcRenderer.send('closeTab', tabUuid, newTabUuid, bounds),
   resize: (tabUuid: string, bounds: Bounds) => ipcRenderer.send('resize', tabUuid, bounds),
   exitApp: () => ipcRenderer.invoke('exitApp'),
-  onTabLoaded: (callback: (tabUuid: string, err?: Error) => void) =>
-    ipcRenderer.on('onTabLoaded', (_, tabUuid: string, err?: Error) => callback(tabUuid, err)),
   onTabUser: (callback: (user: TabUser, tabUuid: string) => void) =>
     ipcRenderer.on('onTabUser', (_, user, tabUuid) => callback(user, tabUuid)),
   onTabSwitched: (callback: (tabUuid: string) => void) =>

@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   FieldType,
   ipRules,
   ipTypeRules,
+  portRules,
   ProxyConfig,
   ProxyConfigSection,
   ProxyConfigType
@@ -10,7 +11,6 @@ import {
 import { Button, Checkbox, Form, Input, Select, Space } from 'antd'
 import { IProxyTabConfig } from 'src/model/type'
 import _ from 'lodash'
-import { removeEmpty } from '@renderer/utils/util'
 
 interface Props {
   config?: IProxyTabConfig
@@ -19,54 +19,42 @@ interface Props {
 }
 const TabProxy: React.FC<Props> = React.memo((props: Props) => {
   const { onCancel, onConfirm, config: configProps } = props
-  const [configs, setConfigs] = useState<ProxyConfigType>(ProxyConfig)
+  const [configs] = useState<ProxyConfigType>(ProxyConfig)
   const [form] = Form.useForm()
-  const [config, setConfig] = useState<IProxyTabConfig>(() => configProps as IProxyTabConfig)
+  const serveValue = Form.useWatch('serve', form)
+  const userAgent = Form.useWatch('agent', form)
+  const isServe = useMemo(() => serveValue ?? configProps?.serve, [configProps?.serve, serveValue])
   const onGenUserAgent = async () => {
     const value = form.getFieldValue('system')
     const agent = await window.api.genUserAgent(value)
     form.setFieldsValue({ agent })
-    setConfig((prev = {} as IProxyTabConfig) => ({ ...prev, agent }))
   }
   const onSuffixClick = (section: ProxyConfigSection) => {
     if (section.key === 'agent') onGenUserAgent()
   }
-  const onFinish = async (values: any) => {
-    const config = removeEmpty(values ?? {})
-    onConfirm(config, !!values)
-  }
-  const onFieldsChange = (changedFields) => {
-    const field = changedFields[0]
-    const fieldName = field?.name?.[0]
-    const filedValue = field?.value
-    if (fieldName === 'serve' && !filedValue)
+  useEffect(() => {
+    if (!serveValue) {
       form.setFields([
         { name: 'ip', errors: [] },
-        { name: 'type', errors: [] }
+        { name: 'type', errors: [] },
+        { name: 'port', errors: [] }
       ])
-    const _configs = configs.map((config) => {
-      const { sections, ...rest } = config
-      return {
-        ...rest,
-        sections: sections.map((section) => {
-          if (section.key === fieldName) section.value = filedValue
-          return section
-        })
-      }
-    })
-    setConfigs(_configs as any)
+    }
+  }, [form, serveValue])
+  const onFinish = async (values: any) => {
+    onConfirm(values, !!values)
   }
   const onDisabled = (section) => {
-    if (section.key === 'ip') {
-      return !(form.getFieldValue('serve') ?? configProps?.serve)
+    if (section.key === 'ip' || section.key === 'port') {
+      return !isServe
     }
     return false
   }
   const onRules = (section) => {
-    const isServe = form.getFieldValue('serve') ?? configProps?.serve
     if (section.key === 'ip' && isServe) return ipRules
     if (section.key === 'type' && isServe) return ipTypeRules
-    return undefined
+    if (section.key === 'port' && isServe) return portRules
+    return []
   }
   return (
     <div className="flex flex-col w-full h-full overflow-hidden !p-2">
@@ -81,7 +69,6 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
             initialValues={configProps}
             scrollToFirstError
             onFinish={onFinish}
-            onFieldsChange={onFieldsChange}
             name="proxyForm"
           >
             {configs.map((item) => (
@@ -165,20 +152,20 @@ const TabProxy: React.FC<Props> = React.memo((props: Props) => {
           <div className="configs p-2 bg-[#d9d9d9] text-[14px] text-black/88">
             <div className="flex items-start !mb-2">
               <div className="w-24">User Agent</div>
-              <div className="flex-1 text-right">{config?.agent || '-'}</div>
+              <div className="flex-1 text-right">{userAgent || '-'}</div>
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">时区</div>
-              <div className="flex-1 text-right">{config?.timezone || '-'}</div>
+              <div className="flex-1 text-right">{configProps?.timezone || '-'}</div>
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">IP地址</div>
-              <div className="flex-1 text-right">{config?.ip || '-'}</div>
+              <div className="flex-1 text-right">{configProps?.ip || '-'}</div>
             </div>
             <div className="flex items-start !mb-2">
               <div className="w-24">地理位置</div>
               <div className="flex-1 text-right">
-                <>{config?.country || '-'}</>
+                <>{configProps?.country || '-'}</>
               </div>
             </div>
           </div>

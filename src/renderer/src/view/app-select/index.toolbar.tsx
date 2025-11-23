@@ -17,7 +17,7 @@ const ToolBar: React.FC<Props> = React.memo((props: Props) => {
   if (tab?.uuid) {
     return (
       <div className={cn(styles.toolBlock)}>
-        {url && (
+        {/* {url && ( */}
           <React.Fragment>
             {TOOL_CONFIG.map((tool) => {
               const color =
@@ -36,7 +36,7 @@ const ToolBar: React.FC<Props> = React.memo((props: Props) => {
               )
             })}
           </React.Fragment>
-        )}
+        {/* )} */}
       </div>
     )
   }
