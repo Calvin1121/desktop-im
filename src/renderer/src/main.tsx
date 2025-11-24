@@ -6,7 +6,6 @@ import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/rea
 import { routeTree } from './routeTree.gen'
 import { MainProvider } from './main.provider'
 import { ConfigSWR } from './main.swr'
-import { SocketProvider } from './main.socket'
 import InitialMain from './main.initial'
 import GlobalToast from './main.toast'
 

@@ -8,20 +8,19 @@ export interface ConfigMap {
 export interface BaseTab {
   uuid: string
   name?: string
-  userName?: string
+  user?: TabUser
   loading?: boolean
   loaded?: boolean
   isPanelVisible?: boolean
   isRefreshing?: boolean
+  toolType?: ToolType
 }
 
 export interface Tab extends BaseTab {
   url: string
   index?: string
   key?: IM_TYPE
-  user?: TabUser
   configMap?: ConfigMap
-  toolType?: ToolType
 }
 export interface Bounds {
   width: number

@@ -39,15 +39,31 @@ export default function AppSelect() {
   const getTabByUuid = (uuid: string) => {
     return tabs.find((tab) => tab.uuid === uuid) as BaseTab
   }
+  const updateTab = (uuid: string, updater: (tab: BaseTab) => BaseTab) => {
+    setTabs((prev) => prev.map((tab) => (tab.uuid === uuid ? { ...tab, ...updater(tab) } : tab)))
+  }
+  const updateTabState = (
+    uuid: string,
+    toolType: ToolType,
+    config: Record<string, string>,
+    callback?: (config: Record<string, string>) => void
+  ) => {
+    const tabState = tabStateRef.current.get(uuid) || {}
+    const configMap = tabState?.configMap || {}
+    const _config = { ..._.get(configMap, toolType), ...config }
+    callback?.(_config)
+    _.set(configMap, toolType, _config)
+    _.set(tabState, 'configMap', configMap)
+    tabStateRef.current.set(uuid, tabState)
+  }
   const onAddTab = () => {
     if (isExceed) return
     const uuid = v4()
     const tab = { uuid, name: '' }
     const tabState = { uuid, url: '' }
     tabStateRef.current.set(uuid, tabState)
-    const _tabs = [...tabs, tab]
     setActiveTabId(uuid)
-    setTabs(_tabs)
+    setTabs([...tabs, tab])
     window.api.openTab()
     isInit.current = true
   }
@@ -94,26 +110,17 @@ export default function AppSelect() {
   }, [])
   const onOpenUrl = async (item: Tab) => {
     const { uuid, url, index, key, name } = item
-    setTabs((prev) =>
-      prev.map((tab) => (tab.uuid === uuid ? { ...tab, loading: true, name } : tab))
-    )
+    updateTab(uuid, (tab) => ({ ...tab, loading: true, name }))
     const prevTabState = tabStateRef.current.get(uuid) || {}
     const newTabState = Object.assign(prevTabState, { url, index, key })
     const proxyConfig = _.get(prevTabState.configMap, ToolType.onSetTabProxy) || {}
     tabStateRef.current.set(uuid, newTabState)
     const { tabUuid } = await window.api.openUrl(item, getBounds(), proxyConfig)
-    setTabs((prev) =>
-      prev.map((tab) => (tab.uuid === tabUuid ? { ...tab, loading: false, loaded: true } : tab))
-    )
+    updateTab(tabUuid, (tab) => ({ ...tab, loading: false, loaded: true }))
   }
   useEffect(() => {
     window.api.onTabUser((user, uuid) => {
-      const tabState = tabStateRef.current.get(uuid) || {}
-      Object.assign(tabState, { user, uuid })
-      tabStateRef.current.set(uuid, tabState)
-      setTabs((prev) =>
-        prev.map((tab) => (tab.uuid === uuid ? { ...tab, userName: user.userName } : tab))
-      )
+      updateTab(uuid, (tab) => ({ ...tab, user }))
     })
     window.api.onTabSwitched((uuid) => {
       setActiveTabId(uuid)
@@ -134,27 +141,21 @@ export default function AppSelect() {
     if (activeTabId) {
       const onSaving = async () => {
         await window.api.refreshTab(activeTabId)
-        _.delay(() => {
-          setTabs((tabs) =>
-            tabs.map((tab) => (tab.uuid === activeTabId ? { ...tab, isRefreshing: false } : tab))
-          )
-        }, 1000)
+        _.delay(() => updateTab(activeTabId, (tab) => ({ ...tab, isRefreshing: false })), 1000)
       }
       onToast({ callback: onSaving(), loading: '刷新中', success: '刷新成功' })
-      setTabs((tabs) =>
-        tabs.map((tab) => (tab.uuid === activeTabId ? { ...tab, isRefreshing: true } : tab))
-      )
+      updateTab(activeTabId, (tab) => ({ ...tab, isRefreshing: true }))
     }
   }
   const onUpdateTabsByToolbar = (toolType?: ToolType) => {
     if (activeTabId) {
-      const _tab = tabs.find((tab) => tab.uuid === activeTabId)
-      if (!_tab || tabStateRef.current.get(activeTabId)?.toolType === toolType) return
-      _tab.isPanelVisible = !!toolType
-      window.api.toggleTab(_tab, !_tab.isPanelVisible)
-      const currentTabState = { ...tabStateRef.current.get(activeTabId), toolType }
-      tabStateRef.current.set(activeTabId, currentTabState)
-      setTabs([...tabs])
+      updateTab(activeTabId, (tab) => {
+        const _tab = { ...tab, isPanelVisible: !!toolType, toolType }
+        // const currentTabState = { ...tabStateRef.current.get(activeTabId), toolType }
+        // tabStateRef.current.set(activeTabId, currentTabState)
+        window.api.toggleTab(_tab, !_tab.isPanelVisible)
+        return _tab
+      })
     }
   }
   const onTapToolCallback = (toolType: ToolType) => {
@@ -163,15 +164,13 @@ export default function AppSelect() {
         onRefreshTab()
         return
       }
-      const currentTabState = tabStateRef.current.get(activeTabId)
-      if (toolType === ToolType.onTogglePanel && currentTabState?.toolType) {
+      const tab = getTabByUuid(activeTabId)
+      if (toolType === ToolType.onTogglePanel && tab?.toolType) {
         onUpdateTabsByToolbar(undefined)
         return
       }
       const _toolType =
-        toolType === ToolType.onTogglePanel && !currentTabState?.toolType
-          ? ToolType.onSetTabProxy
-          : toolType
+        toolType === ToolType.onTogglePanel && !tab?.toolType ? ToolType.onSetTabProxy : toolType
       onUpdateTabsByToolbar(_toolType)
     }
   }
@@ -188,12 +187,7 @@ export default function AppSelect() {
       getIPLocation({ uuid: activeTabId, ip, port })
       window.api.tabProxy(activeTabId, config as IProxyTabConfig)
     }
-    const tabState = tabStateRef.current.get(activeTabId) || {}
-    const configMap = tabState?.configMap || {}
-    const _config = { ..._.get(configMap, toolType), ...config }
-    _.set(configMap, toolType, _config)
-    _.set(tabState, 'configMap', configMap)
-    tabStateRef.current.set(activeTabId, tabState)
+    updateTabState(activeTabId, toolType, config)
     if (isManual) onUpdateTabsByToolbar(undefined)
   }
 
@@ -212,13 +206,9 @@ export default function AppSelect() {
   useEffect(() => {
     if (ipInfo?.uuid) {
       const { uuid, ...rest } = ipInfo
-      const tabState = tabStateRef.current.get(uuid) || {}
-      const configMap = tabState?.configMap || {}
-      const proxyConfig = { ..._.get(configMap, ToolType.onSetTabProxy), ...rest }
-      if (!proxyConfig.agent) proxyConfig.agent = window.navigator.userAgent
-      _.set(configMap, ToolType.onSetTabProxy, proxyConfig)
-      _.set(tabState, 'configMap', configMap)
-      tabStateRef.current.set(uuid, tabState)
+      updateTabState(uuid, ToolType.onSetTabProxy, rest, (config) => {
+        if (!config.agent) config.agent = window.navigator.userAgent
+      })
     }
   }, [ipInfo])
 
@@ -227,11 +217,12 @@ export default function AppSelect() {
       <div ref={barRef} className={styles.tabBar}>
         <div className={styles.tabBarContent}>
           {tabs.map((item) => {
-            const userName = item.userName
+            const userName = item.user?.userName || ''
             const IMName = item.name
             const displayName = IMName && userName ? `${IMName}-${userName}` : IMName || '标签页'
             return (
               <div
+                data-userid={item.user?.userId || 'unlogged'}
                 data-tabid={item.uuid}
                 title={displayName}
                 onClick={() => onSwitch(item)}
@@ -274,6 +265,7 @@ export default function AppSelect() {
                 )}
                 {tab.isPanelVisible && (
                   <ToolPanel
+                    toolType={tab.toolType}
                     tabState={tabStateRef.current.get(activeTabId)}
                     onCancel={() => onTapToolCallback(ToolType.onTogglePanel)}
                     onConfirm={onToolConfigConfirm}
@@ -286,13 +278,7 @@ export default function AppSelect() {
       </div>
       {tabs.map((tab) => (
         <React.Fragment key={tab.uuid}>
-          {tab.uuid === activeTabId && (
-            <ToolBar
-              tab={tab}
-              tabState={tabStateRef.current.get(activeTabId)}
-              onTapToolCallback={onTapToolCallback}
-            />
-          )}
+          {tab.uuid === activeTabId && <ToolBar tab={tab} onTapToolCallback={onTapToolCallback} />}
         </React.Fragment>
       ))}
     </div>

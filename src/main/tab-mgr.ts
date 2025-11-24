@@ -101,24 +101,22 @@ export class TabMgr {
     }
     return new DefaultTab(tab)
   }
-  openUrl(tab: Tab, bounds: Bounds, proxyConfig: IProxyTabConfig) {
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve) => {
-      const uuid = tab.uuid
-      const res = { tabUuid: uuid }
-      if (this.tabs.has(uuid)) {
-        this.switchTab(tab, bounds)
-        return
-      }
-      const instance = this.onGenerateTab(tab)
-      this.tabs.set(uuid, instance)
-      this.mainWindow.addBrowserView(instance.getView())
-      await this.tabProxy(uuid, proxyConfig, false)
-      instance
-        .load(bounds)
-        .then(() => resolve(res))
-        .catch((err) => resolve({ ...res, err }))
-    })
+  async openUrl(tab: Tab, bounds: Bounds, proxyConfig: IProxyTabConfig) {
+    const uuid = tab.uuid
+    const res = { tabUuid: uuid }
+    if (this.tabs.has(uuid)) {
+      this.switchTab(tab, bounds)
+      return res
+    }
+    const instance = this.onGenerateTab(tab)
+    this.tabs.set(uuid, instance)
+    this.mainWindow.addBrowserView(instance.getView())
+    await this.tabProxy(uuid, proxyConfig, false)
+    const result = await instance
+      .load(bounds)
+      .then(() => res)
+      .catch((err) => ({ ...res, err }))
+    return result
   }
   closeTab(tabUuid: string): void {
     try {
